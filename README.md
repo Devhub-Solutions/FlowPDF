@@ -72,3 +72,35 @@ Chi tiết API và ví dụ curl xem tại file api-docs.html hoặc truy cập 
 - Trang landing: `/landing.html`
 - Swagger UI: `/docs`
 - Cấu hình Docker: app.Dockerfile, `docker-compose.yml`
+
+## CI/CD — Deploy to Dokku (staging)
+
+This repository includes an optional GitHub Actions workflow to deploy to a Dokku host when code is pushed to `main`.
+
+Required GitHub secrets:
+- `SSH_PRIVATE_KEY` — private SSH key for deployment (add its public key to the Dokku server)
+- `DOKKU_HOST` — Dokku server hostname (for example `stag.devhub.ai.vn`)
+- `DOKKU_APP` — Dokku app name (for example `flowpdf-staging`)
+
+Quick setup:
+
+1. Generate a deploy key locally:
+
+```bash
+ssh-keygen -t ed25519 -C "github-actions@your-repo" -f deploy_key -N ""
+```
+
+2. Add the public key to Dokku (on the Dokku host):
+
+```bash
+# copy the public key contents and on the dokku host run:
+ssh dokku@stag.devhub.ai.vn "dokku ssh-keys:add github-actions '$(cat deploy_key.pub)'"
+```
+
+3. In your GitHub repository settings, add the private key (`deploy_key`) as the `SSH_PRIVATE_KEY` secret. Also add `DOKKU_HOST` and `DOKKU_APP` secrets.
+
+4. The workflow `.github/workflows/deploy-dokku.yml` will run on pushes to `main` and push the repository to the Dokku remote. Dokku will build and deploy the app.
+
+Notes:
+- Make sure the Dokku app exists: `ssh dokku@${DOKKU_HOST} dokku apps:create ${DOKKU_APP}`
+- If you prefer image-based deploys, adapt the workflow to build and push a Docker image and have Dokku deploy that image.

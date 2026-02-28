@@ -835,7 +835,8 @@ let directTempId = null;
 
 async function loadRenderView() {
     try {
-        const templates = await apiGet("/list");
+        const templatesResp = await apiGet("/list");
+        const templates = Array.isArray(templatesResp) ? templatesResp : (templatesResp.templates || []);
         const list = document.getElementById("render-template-list");
         const published = templates.filter(t => t.status === "published");
         if (!published.length) {
@@ -850,7 +851,9 @@ async function loadRenderView() {
                 <div class="render-template-name">${esc(t.name)}</div>
             </div>`
         ).join("");
-    } catch (e) { showToast("Failed to load templates", "error"); }
+    } catch (e) { showToast("Failed to load templates", "error"); 
+        console.error("[loadRenderView] Error loading templates:", e);
+    }
 }
 
 function openRender(tid) { navigateTo("render"); setTimeout(() => selectRenderTemplate(tid), 300); }
