@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     STORAGE_BUCKET: str = "documents"
     
     # Local storage path
-    LOCAL_STORAGE_PATH: str = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "storage")
+    LOCAL_STORAGE_PATH: str = os.getenv("STORAGE_PATH", os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "storage"))
     
     model_config = {
         "case_sensitive": True,

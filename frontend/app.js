@@ -7,6 +7,7 @@
 
 const API_BASE = window.location.origin;
 const DESIGNER_API = `${API_BASE}/api/v1/designer`;
+const RENDER_API = `${API_BASE}/api/v1/render`;
 
 // ─── State ───
 let currentView = "dashboard";
@@ -883,7 +884,7 @@ async function uploadDirectTemplate(e) {
     document.getElementById("render-result-card").style.display = "none";
 
     try {
-        const res = await fetch(`${API_BASE}/api/v1/render/extract`, {
+        const res = await fetch(`${RENDER_API}/extract`, {
             method: "POST",
             headers: getAuthHeaders(),
             body: formData
@@ -901,7 +902,7 @@ async function uploadDirectTemplate(e) {
 
         // update api snippet for direct render
         const sampleData = extractSampleDataFromSchema(data.schema);
-        const snippet = `curl -X POST ${API_BASE}/api/v1/render/direct/${directTempId} \\
+        const snippet = `curl -X POST ${RENDER_API}/direct/${directTempId} \\
   -H "X-API-Key: YOUR_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '${JSON.stringify(sampleData, null, 2)}'`;
@@ -1036,7 +1037,7 @@ async function renderDocument(event) {
     try {
         let result;
         if (directTempId) {
-            const r = await fetch(`${API_BASE}/api/v1/render/direct/${directTempId}`, {
+            const r = await fetch(`${RENDER_API}/direct/${directTempId}`, {
                 method: "POST", headers: { "Content-Type": "application/json", ...getAuthHeaders() },
                 body: JSON.stringify(data)
             });
@@ -1061,7 +1062,7 @@ function showRenderResult(result) {
             <div class="result-row"><label>DOCX</label><span class="value">${result.docx_path ? "✅" : "❌"}</span></div>
             <div class="result-row"><label>PDF</label><span class="value">${result.pdf_path ? "✅" : "⚠️"}</span></div>
             <div class="download-buttons">
-                ${result.docx_path ? `<a href="${API_BASE}/api/v1/render/document/${result.document_id}/download" class="btn btn-primary" target="_blank">📄 Download</a>` : ""}
+                ${result.docx_path ? `<a href="${RENDER_API}/document/${result.document_id}/download" class="btn btn-primary" target="_blank">📄 Download</a>` : ""}
             </div>
         </div>`;
     document.getElementById("render-result-card").scrollIntoView({ behavior: "smooth" });

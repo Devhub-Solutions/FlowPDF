@@ -22,5 +22,8 @@ COPY . .
 # Expose port
 EXPOSE 8000
 
+# Set storage path environment variable
+ENV STORAGE_PATH=/app/storage
+
 # Default command
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
