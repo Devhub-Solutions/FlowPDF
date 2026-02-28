@@ -13,6 +13,7 @@ jobs:
   deploy-staging:
     name: Deploy → Staging
     runs-on: ubuntu-latest
+    environment: stag
     env:
       DOKKU_HOST: ${{ secrets.DOKKU_HOST_STAG }}
       DOKKU_APP: ${{ secrets.DOKKU_APP_STAG }}
@@ -32,11 +33,11 @@ jobs:
       - name: Add Dokku host to known_hosts
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -H ${{ secrets.DOKKU_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ secrets.DOKKU_HOST_STAG }} >> ~/.ssh/known_hosts
 
       - name: Push to Dokku remote (staging)
         run: |
-          git remote add dokku dokku@${{ secrets.DOKKU_HOST }}:${{ secrets.DOKKU_APP }} || true
+          git remote add dokku dokku@${{ secrets.DOKKU_HOST_STAG }}:${{ secrets.DOKKU_APP_STAG }} || true
           git push dokku HEAD:master --force
 
       - name: Set Dokku config from secrets (staging)
@@ -45,7 +46,7 @@ jobs:
           if [ -n "${DB_URL}" ]; then CMD="$CMD DATABASE_URL='${DB_URL}'"; fi
           if [ -n "${API_KEY}" ]; then CMD="$CMD API_KEY='${API_KEY}'"; fi
           if [ -n "$CMD" ]; then
-            ssh dokku@${{ secrets.DOKKU_HOST }} "dokku config:set ${{ secrets.DOKKU_APP }} $CMD"
+            ssh dokku@${{ secrets.DOKKU_HOST_STAG }} "dokku config:set ${{ secrets.DOKKU_APP_STAG }} $CMD"
           else
             echo "No env secrets provided to set on Dokku"
           fi
