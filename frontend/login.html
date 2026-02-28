@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login — Document Automation System</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0a0e1a;
+            --bg-card: #111827;
+            --bg-input: #1a2236;
+            --border: #2d3748;
+            --border-focus: #6366f1;
+            --text: #e2e8f0;
+            --text-muted: #94a3b8;
+            --accent-blue: #6366f1;
+            --accent-cyan: #22d3ee;
+            --accent-green: #34d399;
+            --accent-red: #f87171;
+            --gradient: linear-gradient(135deg, #6366f1, #8b5cf6, #06b6d4);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-image:
+                radial-gradient(ellipse at 20% 50%, rgba(99, 102, 241, 0.08) 0%, transparent 70%),
+                radial-gradient(ellipse at 80% 50%, rgba(6, 182, 212, 0.06) 0%, transparent 70%);
+        }
+
+        .auth-container {
+            width: 100%;
+            max-width: 420px;
+            padding: 20px;
+        }
+
+        .auth-logo {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .auth-logo h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 6px;
+        }
+
+        .auth-logo p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .auth-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .auth-tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 28px;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .auth-tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+            background: transparent;
+            color: var(--text-muted);
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .auth-tab.active {
+            background: var(--accent-blue);
+            color: white;
+        }
+
+        .auth-tab:hover:not(.active) {
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.82rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 11px 14px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text);
+            font-size: 0.9rem;
+            font-family: 'Inter', sans-serif;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus {
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 12px;
+            background: var(--gradient);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.92rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.1s;
+            margin-top: 8px;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .error-msg {
+            background: rgba(248, 113, 113, 0.1);
+            border: 1px solid rgba(248, 113, 113, 0.3);
+            color: var(--accent-red);
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            margin-bottom: 16px;
+            display: none;
+        }
+
+        .success-msg {
+            background: rgba(52, 211, 153, 0.1);
+            border: 1px solid rgba(52, 211, 153, 0.3);
+            color: var(--accent-green);
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            margin-bottom: 16px;
+            display: none;
+        }
+
+        .auth-form {
+            display: none;
+        }
+
+        .auth-form.active {
+            display: block;
+        }
+
+        .footer-text {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-5px);
+            }
+
+            75% {
+                transform: translateX(5px);
+            }
+        }
+
+        .shake {
+            animation: shake 0.3s;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="auth-container">
+        <div class="auth-logo">
+            <h1>📄 Document Automation</h1>
+            <p>Template Designer & Render Engine</p>
+        </div>
+
+        <div class="auth-card">
+            <div class="auth-tabs">
+                <button class="auth-tab active" onclick="switchTab('login')">Đăng nhập</button>
+                <button class="auth-tab" onclick="switchTab('register')">Đăng ký</button>
+            </div>
+
+            <div id="error-msg" class="error-msg"></div>
+            <div id="success-msg" class="success-msg"></div>
+
+            <!-- Login Form -->
+            <form id="login-form" class="auth-form active" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label for="login-username">Tên đăng nhập</label>
+                    <input type="text" id="login-username" placeholder="admin" required autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Mật khẩu</label>
+                    <input type="password" id="login-password" placeholder="••••••" required
+                        autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn-primary" id="login-btn">Đăng nhập</button>
+            </form>
+
+            <!-- Register Form -->
+            <form id="register-form" class="auth-form" onsubmit="handleRegister(event)">
+                <div class="form-group">
+                    <label for="reg-username">Tên đăng nhập</label>
+                    <input type="text" id="reg-username" placeholder="username" required minlength="3">
+                </div>
+                <div class="form-group">
+                    <label for="reg-email">Email (tùy chọn)</label>
+                    <input type="email" id="reg-email" placeholder="email@example.com">
+                </div>
+                <div class="form-group">
+                    <label for="reg-password">Mật khẩu</label>
+                    <input type="password" id="reg-password" placeholder="Tối thiểu 6 ký tự" required minlength="6">
+                </div>
+                <button type="submit" class="btn-primary" id="reg-btn">Đăng ký</button>
+            </form>
+        </div>
+
+        <p class="footer-text">Document Automation System v1.0</p>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+
+        function switchTab(tab) {
+            document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+            document.getElementById('error-msg').style.display = 'none';
+            document.getElementById('success-msg').style.display = 'none';
+
+            if (tab === 'login') {
+                document.querySelectorAll('.auth-tab')[0].classList.add('active');
+                document.getElementById('login-form').classList.add('active');
+            } else {
+                document.querySelectorAll('.auth-tab')[1].classList.add('active');
+                document.getElementById('register-form').classList.add('active');
+            }
+        }
+
+        function showError(msg) {
+            const el = document.getElementById('error-msg');
+            el.textContent = msg;
+            el.style.display = 'block';
+            document.getElementById('success-msg').style.display = 'none';
+            el.classList.remove('shake');
+            void el.offsetWidth;
+            el.classList.add('shake');
+        }
+
+        function showSuccess(msg) {
+            const el = document.getElementById('success-msg');
+            el.textContent = msg;
+            el.style.display = 'block';
+            document.getElementById('error-msg').style.display = 'none';
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const btn = document.getElementById('login-btn');
+            btn.disabled = true;
+            btn.textContent = 'Đang xử lý...';
+
+            try {
+                const resp = await fetch(`${API_BASE}/api/v1/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        username: document.getElementById('login-username').value,
+                        password: document.getElementById('login-password').value,
+                    }),
+                });
+
+                const data = await resp.json();
+                if (!resp.ok) {
+                    showError(data.detail || 'Login failed');
+                    return;
+                }
+
+                // Store token in localStorage as backup
+                localStorage.setItem('access_token', data.access_token);
+                showSuccess('Đăng nhập thành công! Đang chuyển hướng...');
+                setTimeout(() => window.location.href = '/ui', 500);
+            } catch (err) {
+                showError('Network error: ' + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Đăng nhập';
+            }
+        }
+
+        async function handleRegister(e) {
+            e.preventDefault();
+            const btn = document.getElementById('reg-btn');
+            btn.disabled = true;
+            btn.textContent = 'Đang xử lý...';
+
+            try {
+                const resp = await fetch(`${API_BASE}/api/v1/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        username: document.getElementById('reg-username').value,
+                        password: document.getElementById('reg-password').value,
+                        email: document.getElementById('reg-email').value || null,
+                    }),
+                });
+
+                const data = await resp.json();
+                if (!resp.ok) {
+                    showError(data.detail || 'Registration failed');
+                    return;
+                }
+
+                localStorage.setItem('access_token', data.access_token);
+                showSuccess('Đăng ký thành công! Đang chuyển hướng...');
+                setTimeout(() => window.location.href = '/ui', 500);
+            } catch (err) {
+                showError('Network error: ' + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Đăng ký';
+            }
+        }
+
+        // Auto-redirect if already logged in
+        (async () => {
+            const token = localStorage.getItem('access_token');
+            if (token) {
+                try {
+                    const resp = await fetch(`${API_BASE}/health`, {
+                        headers: { 'Authorization': `Bearer ${token}` },
+                    });
+                    if (resp.ok) {
+                        window.location.href = '/ui';
+                    }
+                } catch { }
+            }
+        })();
+    </script>
+</body>
+
+</html>

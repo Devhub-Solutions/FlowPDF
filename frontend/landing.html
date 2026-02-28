@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DocFlow — Tạo Hóa Đơn, Hợp Đồng & Xuất PDF Tự Động</title>
+    <meta name="description"
+        content="Nền tảng tự động hóa tài liệu. Upload mẫu DOCX, thiết kế template, điền dữ liệu và xuất PDF chuyên nghiệp chỉ trong vài phút.">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #050810;
+            --bg-section: #0a0e1a;
+            --bg-card: rgba(17, 24, 39, 0.7);
+            --border: rgba(99, 102, 241, 0.15);
+            --text: #e2e8f0;
+            --text-muted: #94a3b8;
+            --text-dim: #64748b;
+            --accent-indigo: #6366f1;
+            --accent-purple: #8b5cf6;
+            --accent-cyan: #22d3ee;
+            --accent-green: #34d399;
+            --accent-amber: #f59e0b;
+            --accent-rose: #fb7185;
+            --gradient-main: linear-gradient(135deg, #6366f1, #8b5cf6, #06b6d4);
+            --gradient-warm: linear-gradient(135deg, #f59e0b, #fb7185);
+            --radius: 16px;
+            --radius-sm: 10px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* ══ NAV ══ */
+        .nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 100;
+            padding: 16px 0;
+            transition: all 0.3s;
+            backdrop-filter: blur(20px);
+            background: rgba(5, 8, 16, 0.7);
+            border-bottom: 1px solid transparent;
+        }
+
+        .nav.scrolled {
+            border-bottom-color: var(--border);
+            background: rgba(5, 8, 16, 0.95);
+        }
+
+        .nav-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .nav-logo {
+            font-size: 1.3rem;
+            font-weight: 800;
+            background: var(--gradient-main);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-logo span {
+            font-size: 1.4rem;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.88rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: white;
+        }
+
+        .nav-cta {
+            padding: 8px 20px;
+            background: var(--gradient-main);
+            color: white !important;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85rem !important;
+            transition: opacity 0.2s, transform 0.1s;
+        }
+
+        .nav-cta:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        /* ══ HERO ══ */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            position: relative;
+            padding: 120px 24px 80px;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 60% 50% at 50% 0%, rgba(99, 102, 241, 0.12) 0%, transparent 80%),
+                radial-gradient(ellipse 40% 40% at 80% 20%, rgba(139, 92, 246, 0.08) 0%, transparent 70%),
+                radial-gradient(ellipse 40% 40% at 20% 30%, rgba(6, 182, 212, 0.06) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .hero-content {
+            max-width: 800px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 16px;
+            border-radius: 50px;
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.25);
+            color: var(--accent-cyan);
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-bottom: 28px;
+            animation: fadeInDown 0.6s ease;
+        }
+
+        .hero-badge .pulse {
+            width: 8px;
+            height: 8px;
+            background: var(--accent-green);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .hero h1 {
+            font-size: clamp(2.4rem, 5vw, 3.8rem);
+            font-weight: 900;
+            line-height: 1.15;
+            margin-bottom: 20px;
+            animation: fadeInUp 0.7s ease;
+        }
+
+        .hero h1 .gradient-text {
+            background: var(--gradient-main);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: 1.15rem;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 0 auto 36px;
+            animation: fadeInUp 0.8s ease;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 14px;
+            justify-content: center;
+            flex-wrap: wrap;
+            animation: fadeInUp 0.9s ease;
+        }
+
+        .btn-hero {
+            padding: 14px 32px;
+            border-radius: var(--radius-sm);
+            font-size: 0.95rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: var(--gradient-main);
+            color: white;
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--text);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .btn-outline:hover {
+            border-color: rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* ══ STATS BAR ══ */
+        .stats-bar {
+            display: flex;
+            justify-content: center;
+            gap: 48px;
+            margin-top: 60px;
+            animation: fadeInUp 1s ease;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-num {
+            font-size: 2rem;
+            font-weight: 800;
+            background: var(--gradient-main);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            margin-top: 4px;
+        }
+
+        /* ══ SECTION SHARED ══ */
+        section {
+            padding: 100px 24px;
+        }
+
+        .section-inner {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .section-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--accent-indigo);
+            margin-bottom: 12px;
+        }
+
+        .section-title {
+            font-size: clamp(1.8rem, 3.5vw, 2.6rem);
+            font-weight: 800;
+            margin-bottom: 16px;
+            line-height: 1.2;
+        }
+
+        .section-desc {
+            font-size: 1.05rem;
+            color: var(--text-muted);
+            max-width: 600px;
+        }
+
+        .section-desc.centered {
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        /* ══ HOW IT WORKS ══ */
+        .how-section {
+            background: var(--bg-section);
+        }
+
+        .how-section .section-inner {
+            text-align: center;
+        }
+
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 32px;
+            margin-top: 56px;
+        }
+
+        .step-card {
+            padding: 32px 24px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            text-align: center;
+            position: relative;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .step-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 50px rgba(99, 102, 241, 0.1);
+        }
+
+        .step-num {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: var(--gradient-main);
+            color: white;
+            font-weight: 700;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+        }
+
+        .step-icon {
+            font-size: 2.2rem;
+            margin-bottom: 14px;
+        }
+
+        .step-card h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .step-card p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        /* ══ FEATURES ══ */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            margin-top: 56px;
+        }
+
+        .feature-card {
+            padding: 28px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            transition: transform 0.3s, border-color 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(99, 102, 241, 0.35);
+        }
+
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            margin-bottom: 18px;
+        }
+
+        .feature-icon.indigo {
+            background: rgba(99, 102, 241, 0.12);
+        }
+
+        .feature-icon.cyan {
+            background: rgba(34, 211, 238, 0.12);
+        }
+
+        .feature-icon.green {
+            background: rgba(52, 211, 153, 0.12);
+        }
+
+        .feature-icon.amber {
+            background: rgba(245, 158, 11, 0.12);
+        }
+
+        .feature-icon.rose {
+            background: rgba(251, 113, 133, 0.12);
+        }
+
+        .feature-icon.purple {
+            background: rgba(139, 92, 246, 0.12);
+        }
+
+        .feature-card h3 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .feature-card p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.65;
+        }
+
+        /* ══ USE CASES ══ */
+        .usecases-section {
+            background: var(--bg-section);
+        }
+
+        .usecases-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            margin-top: 56px;
+        }
+
+        .usecase-card {
+            padding: 28px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            text-align: center;
+            transition: transform 0.3s;
+        }
+
+        .usecase-card:hover {
+            transform: translateY(-3px);
+        }
+
+        .usecase-emoji {
+            font-size: 2.6rem;
+            margin-bottom: 16px;
+        }
+
+        .usecase-card h3 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .usecase-card p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* ══ CTA ══ */
+        .cta-section {
+            text-align: center;
+            position: relative;
+        }
+
+        .cta-section::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse 50% 60% at 50% 50%, rgba(99, 102, 241, 0.08) 0%, transparent 80%);
+            pointer-events: none;
+        }
+
+        .cta-box {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 56px 40px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-box h2 {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 14px;
+        }
+
+        .cta-box p {
+            font-size: 1rem;
+            color: var(--text-muted);
+            margin-bottom: 28px;
+        }
+
+        /* ══ FOOTER ══ */
+        .footer {
+            padding: 40px 24px;
+            border-top: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .footer-inner {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .footer-text {
+            font-size: 0.82rem;
+            color: var(--text-dim);
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 20px;
+        }
+
+        .footer-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.82rem;
+            transition: color 0.2s;
+        }
+
+        .footer-links a:hover {
+            color: white;
+        }
+
+        /* ══ ANIMATIONS ══ */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.5;
+                transform: scale(1.3);
+            }
+        }
+
+        /* Scroll animations */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ══ RESPONSIVE ══ */
+        @media (max-width: 768px) {
+            .steps-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 16px;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .usecases-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-links a:not(.nav-cta) {
+                display: none;
+            }
+
+            .stats-bar {
+                gap: 24px;
+                flex-wrap: wrap;
+            }
+
+            .footer-inner {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .cta-box {
+                padding: 36px 24px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ═══ NAV ═══ -->
+    <nav class="nav" id="nav">
+        <div class="nav-inner">
+            <a href="/" class="nav-logo"><span>📄</span> DocFlow</a>
+            <div class="nav-links">
+                <a href="#how-it-works">Cách hoạt động</a>
+                <a href="#features">Tính năng</a>
+                <a href="#usecases">Ứng dụng</a>
+
+                <a href="/login" class="nav-cta">Bắt đầu miễn phí →</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ═══ HERO ═══ -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-badge">
+                <div class="pulse"></div>
+                Hệ thống tự động hóa tài liệu
+            </div>
+            <h1>
+                Tạo <span class="gradient-text">Hóa Đơn</span>,<br>
+                <span class="gradient-text">Hợp Đồng</span> & Xuất PDF<br>
+                Chỉ Trong Vài Phút
+            </h1>
+            <p>
+                Upload mẫu DOCX bất kỳ → thiết kế template trực quan → điền dữ liệu → nhận PDF chuyên nghiệp. Không cần
+                lập trình, không cần cài đặt phần mềm.
+            </p>
+            <div class="hero-actions">
+                <a href="/login" class="btn-hero btn-primary">
+                    Tạo Template Ngay
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round">
+                        <path d="M5 12h14M12 5l7 7-7 7" />
+                    </svg>
+                </a>
+                <a href="#how-it-works" class="btn-hero btn-outline">
+                    Xem cách hoạt động
+                </a>
+            </div>
+
+            <div class="stats-bar">
+                <div class="stat-item">
+                    <div class="stat-num">5s</div>
+                    <div class="stat-label">Thời gian xuất PDF</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-num">∞</div>
+                    <div class="stat-label">Templates không giới hạn</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-num">100%</div>
+                    <div class="stat-label">Giữ nguyên layout DOCX</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-num">API</div>
+                    <div class="stat-label">Tích hợp dễ dàng</div>
+                </div>
+            </div>
+
+            <!-- Demo Video -->
+            <div class="reveal" style="margin-top:56px">
+                <video id="demo-vid" autoplay muted loop playsinline
+                    style="width:100%;max-width:920px;border-radius:16px;border:1px solid rgba(99,102,241,0.25);box-shadow:0 20px 80px rgba(99,102,241,0.15);"
+                    src="/frontend/video.mp4"></video>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══ HOW IT WORKS ═══ -->
+    <section class="how-section" id="how-it-works">
+        <div class="section-inner">
+            <div class="section-label">📐 QUY TRÌNH</div>
+            <h2 class="section-title">4 Bước Đơn Giản</h2>
+            <p class="section-desc centered">Từ file DOCX thô → template thông minh → document hoàn chỉnh, chỉ trong vài
+                phút.</p>
+
+            <div class="steps-grid">
+                <div class="step-card reveal">
+                    <div class="step-num">1</div>
+                    <div class="step-icon">📤</div>
+                    <h3>Upload File DOCX</h3>
+                    <p>Upload bất kỳ file hóa đơn, hợp đồng, báo cáo đã có sẵn. Giữ nguyên layout gốc.</p>
+                </div>
+                <div class="step-card reveal">
+                    <div class="step-num">2</div>
+                    <div class="step-icon">🎨</div>
+                    <h3>Thiết Kế Template</h3>
+                    <p>Bôi chọn text → gán nhãn. Hệ thống tự tạo template với các trường cần điền.</p>
+                </div>
+                <div class="step-card reveal">
+                    <div class="step-num">3</div>
+                    <div class="step-icon">📝</div>
+                    <h3>Điền Dữ Liệu</h3>
+                    <p>Form tự động sinh ra. Nhập tên, địa chỉ, số tiền... hoặc gọi API để tự động fill.</p>
+                </div>
+                <div class="step-card reveal">
+                    <div class="step-num">4</div>
+                    <div class="step-icon">📄</div>
+                    <h3>Xuất PDF</h3>
+                    <p>Nhận file PDF chuyên nghiệp, giữ nguyên font, bảng, layout. Tải về hoặc gửi email.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══ FEATURES ═══ -->
+    <section id="features">
+        <div class="section-inner">
+            <div class="section-label">⚡ TÍNH NĂNG</div>
+            <h2 class="section-title">Mọi Thứ Bạn Cần</h2>
+            <p class="section-desc">Công cụ mạnh mẽ cho cá nhân và doanh nghiệp.</p>
+
+            <div class="features-grid">
+                <div class="feature-card reveal">
+                    <div class="feature-icon indigo">🖱️</div>
+                    <h3>Drag & Select Designer</h3>
+                    <p>Bôi chọn text trên giao diện preview, gán nhãn biến. Không cần viết code hay chỉnh sửa DOCX thủ
+                        công.</p>
+                </div>
+                <div class="feature-card reveal">
+                    <div class="feature-icon cyan">🔄</div>
+                    <h3>Table Loop / Array</h3>
+                    <p>Hỗ trợ bảng dữ liệu động: danh sách sản phẩm, chi tiết dịch vụ. Tự nhân bản rows theo data.</p>
+                </div>
+                <div class="feature-card reveal">
+                    <div class="feature-icon green">📊</div>
+                    <h3>Xuất PDF Chất Lượng Cao</h3>
+                    <p>Sử dụng LibreOffice engine, giữ nguyên font tiếng Việt, bảng, hình ảnh và định dạng gốc.</p>
+                </div>
+                <div class="feature-card reveal">
+                    <div class="feature-icon amber">🔌</div>
+                    <h3>REST API</h3>
+                    <p>API Key authentication, Swagger docs. Tích hợp với ERP, CRM, hoặc bất kỳ hệ thống nào.</p>
+                </div>
+                <div class="feature-card reveal">
+                    <div class="feature-icon rose">🔐</div>
+                    <h3>Bảo Mật JWT</h3>
+                    <p>Đăng nhập/đăng ký với mã hóa mật khẩu. JWT token cho frontend, API Key cho hệ thống bên ngoài.
+                    </p>
+                </div>
+                <div class="feature-card reveal">
+                    <div class="feature-icon purple">🗄️</div>
+                    <h3>MySQL Persistent</h3>
+                    <p>Tất cả templates, mappings, logs lưu trong MySQL. Dữ liệu không mất khi restart. phpMyAdmin quản
+                        lý.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══ USE CASES ═══ -->
+    <section class="usecases-section" id="usecases">
+        <div class="section-inner">
+            <div style="text-align:center">
+                <div class="section-label">🎯 ỨNG DỤNG</div>
+                <h2 class="section-title">Dùng Cho Mọi Ngành</h2>
+                <p class="section-desc centered">Từ startup 1 người đến doanh nghiệp lớn.</p>
+            </div>
+
+            <div class="usecases-grid">
+                <div class="usecase-card reveal">
+                    <div class="usecase-emoji">🧾</div>
+                    <h3>Hóa Đơn / Invoice</h3>
+                    <p>Tạo hóa đơn bán hàng, biên nhận thanh toán với bảng chi tiết sản phẩm, tự tính tổng.</p>
+                </div>
+                <div class="usecase-card reveal">
+                    <div class="usecase-emoji">📑</div>
+                    <h3>Hợp Đồng / Contract</h3>
+                    <p>Hợp đồng dịch vụ, hợp đồng lao động, thỏa thuận. Tự điền thông tin bên A, bên B.</p>
+                </div>
+                <div class="usecase-card reveal">
+                    <div class="usecase-emoji">📋</div>
+                    <h3>Báo Cáo / Report</h3>
+                    <p>Báo cáo tài chính, phân tích chi phí, báo cáo dự án. Bảng số liệu động.</p>
+                </div>
+                <div class="usecase-card reveal">
+                    <div class="usecase-emoji">💌</div>
+                    <h3>Thư Mời / Letter</h3>
+                    <p>Thư mời họp, thư giới thiệu, thông báo. Mail merge hàng loạt.</p>
+                </div>
+                <div class="usecase-card reveal">
+                    <div class="usecase-emoji">🏷️</div>
+                    <h3>Chứng Nhận / Certificate</h3>
+                    <p>Giấy chứng nhận, bằng khen, giấy xác nhận. In hàng loạt với tên khác nhau.</p>
+                </div>
+                <div class="usecase-card reveal">
+                    <div class="usecase-emoji">📦</div>
+                    <h3>Phiếu Xuất Kho</h3>
+                    <p>Phiếu nhập/xuất kho, đơn đặt hàng, biên bản bàn giao. Tự động tạo hàng loạt.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══ CTA ═══ -->
+    <section class="cta-section">
+        <div class="cta-box reveal">
+            <h2>Bắt Đầu <span
+                    style="background:var(--gradient-main);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Miễn
+                    Phí</span> Ngay</h2>
+            <p>Đăng ký tài khoản, upload mẫu DOCX đầu tiên và tạo template trong 5 phút.</p>
+            <div class="hero-actions">
+                <a href="/login" class="btn-hero btn-primary" style="font-size:1rem;padding:16px 36px">
+                    Tạo Tài Khoản →
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══ FOOTER ═══ -->
+    <footer class="footer">
+        <div class="footer-inner">
+            <div class="footer-text">© 2026 DocFlow — Product by <a href="https://devhub.ai.vn">DevHub
+                    Solution</a></div>
+            <div class="footer-links">
+                <a href="/api-docs">API Docs</a>
+                <a href="/login">Đăng nhập</a>
+                <a href="mailto:support@devhub.ai.vn">Hỗ trợ</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Navbar scroll effect
+        window.addEventListener('scroll', () => {
+            document.getElementById('nav').classList.toggle('scrolled', window.scrollY > 50);
+        });
+
+        // Scroll reveal animation
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+        // Set video speed to 1.5x
+        const vid = document.getElementById('demo-vid');
+        if (vid) vid.playbackRate = 1.5;
+    </script>
+</body>
+
+</html>

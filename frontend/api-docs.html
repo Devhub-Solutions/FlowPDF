@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Documentation — DocFlow</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #050810;
+            --bg-section: #0a0e1a;
+            --bg-card: rgba(17, 24, 39, 0.8);
+            --bg-code: #0d1117;
+            --border: rgba(99, 102, 241, 0.15);
+            --text: #e2e8f0;
+            --text-muted: #94a3b8;
+            --text-dim: #64748b;
+            --accent-indigo: #6366f1;
+            --accent-cyan: #22d3ee;
+            --accent-green: #34d399;
+            --accent-amber: #f59e0b;
+            --accent-red: #f87171;
+            --accent-purple: #a78bfa;
+            --gradient: linear-gradient(135deg, #6366f1, #8b5cf6, #06b6d4);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text);
+            line-height: 1.7;
+        }
+
+        /* ═══ NAV ═══ */
+        .nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 100;
+            padding: 14px 0;
+            backdrop-filter: blur(20px);
+            background: rgba(5, 8, 16, 0.9);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .nav-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .nav-logo {
+            font-size: 1.2rem;
+            font-weight: 800;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 24px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: white;
+        }
+
+        .nav-links a.active {
+            color: var(--accent-cyan);
+        }
+
+        /* ═══ LAYOUT ═══ */
+        .layout {
+            display: flex;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding-top: 60px;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 240px;
+            position: sticky;
+            top: 60px;
+            height: calc(100vh - 60px);
+            overflow-y: auto;
+            padding: 24px 16px;
+            border-right: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .sidebar h4 {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-dim);
+            margin: 20px 0 8px;
+            font-weight: 600;
+        }
+
+        .sidebar h4:first-child {
+            margin-top: 0;
+        }
+
+        .sidebar a {
+            display: block;
+            padding: 5px 10px;
+            margin: 2px 0;
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            border-radius: 6px;
+            transition: all 0.15s;
+        }
+
+        .sidebar a:hover {
+            color: white;
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .sidebar a.active {
+            color: var(--accent-indigo);
+            background: rgba(99, 102, 241, 0.12);
+        }
+
+        .main {
+            flex: 1;
+            padding: 32px 40px;
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+
+        /* ═══ CONTENT ═══ */
+        h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 48px 0 16px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
+        }
+
+        h2:first-of-type {
+            border-top: none;
+            margin-top: 32px;
+        }
+
+        h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 28px 0 12px;
+            color: var(--accent-cyan);
+        }
+
+        p {
+            margin-bottom: 14px;
+            color: var(--text-muted);
+            font-size: 0.92rem;
+        }
+
+        p strong {
+            color: var(--text);
+        }
+
+        /* Method badges */
+        .method {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 5px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        .method.get {
+            background: rgba(52, 211, 153, 0.15);
+            color: var(--accent-green);
+        }
+
+        .method.post {
+            background: rgba(99, 102, 241, 0.15);
+            color: var(--accent-indigo);
+        }
+
+        .method.put {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--accent-amber);
+        }
+
+        .method.delete {
+            background: rgba(248, 113, 113, 0.15);
+            color: var(--accent-red);
+        }
+
+        .endpoint-path {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.88rem;
+            color: var(--text);
+            vertical-align: middle;
+        }
+
+        /* Code blocks */
+        pre {
+            background: var(--bg-code);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px 20px;
+            margin: 12px 0 20px;
+            overflow-x: auto;
+            font-size: 0.82rem;
+            line-height: 1.65;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+        }
+
+        .inline-code {
+            background: rgba(99, 102, 241, 0.1);
+            padding: 2px 7px;
+            border-radius: 4px;
+            color: var(--accent-purple);
+            font-size: 0.82rem;
+        }
+
+        /* Parameter table */
+        .params-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 12px 0 20px;
+            font-size: 0.85rem;
+        }
+
+        .params-table th {
+            text-align: left;
+            padding: 8px 12px;
+            font-weight: 600;
+            border-bottom: 2px solid var(--border);
+            color: var(--text-dim);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .params-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid rgba(99, 102, 241, 0.08);
+            vertical-align: top;
+        }
+
+        .params-table td:first-child {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent-cyan);
+            font-size: 0.82rem;
+        }
+
+        .param-type {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .param-req {
+            color: var(--accent-red);
+            font-weight: 600;
+            font-size: 0.75rem;
+        }
+
+        .param-opt {
+            color: var(--text-dim);
+            font-size: 0.75rem;
+        }
+
+        /* Alert boxes */
+        .alert {
+            padding: 14px 18px;
+            border-radius: 10px;
+            margin: 16px 0;
+            font-size: 0.85rem;
+            border-left: 3px solid;
+        }
+
+        .alert-info {
+            background: rgba(99, 102, 241, 0.08);
+            border-color: var(--accent-indigo);
+            color: var(--text-muted);
+        }
+
+        .alert-warn {
+            background: rgba(245, 158, 11, 0.08);
+            border-color: var(--accent-amber);
+            color: var(--text-muted);
+        }
+
+        .alert-success {
+            background: rgba(52, 211, 153, 0.08);
+            border-color: var(--accent-green);
+            color: var(--text-muted);
+        }
+
+        .alert strong {
+            color: var(--text);
+        }
+
+        /* Template cards */
+        .template-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 16px;
+            margin: 16px 0;
+        }
+
+        .tpl-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            transition: border-color 0.2s;
+        }
+
+        .tpl-card:hover {
+            border-color: rgba(99, 102, 241, 0.4);
+        }
+
+        .tpl-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .tpl-card-name {
+            font-weight: 700;
+            font-size: 0.95rem;
+        }
+
+        .tpl-card-status {
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 50px;
+            text-transform: uppercase;
+        }
+
+        .tpl-card-status.published {
+            background: rgba(52, 211, 153, 0.12);
+            color: var(--accent-green);
+        }
+
+        .tpl-card-status.draft {
+            background: rgba(245, 158, 11, 0.12);
+            color: var(--accent-amber);
+        }
+
+        .tpl-card-meta {
+            display: flex;
+            gap: 16px;
+            margin-top: 10px;
+            font-size: 0.78rem;
+            color: var(--text-dim);
+        }
+
+        .tpl-card-id {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            word-break: break-all;
+        }
+
+        .tpl-fields {
+            margin-top: 10px;
+        }
+
+        .tpl-field {
+            display: inline-block;
+            padding: 2px 8px;
+            margin: 2px;
+            background: rgba(99, 102, 241, 0.1);
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent-purple);
+        }
+
+        .tpl-field.array {
+            background: rgba(34, 211, 238, 0.1);
+            color: var(--accent-cyan);
+        }
+
+        .copy-btn {
+            background: rgba(99, 102, 241, 0.15);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            color: var(--accent-indigo);
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            font-family: 'JetBrains Mono', monospace;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: rgba(99, 102, 241, 0.25);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-dim);
+        }
+
+        .loading .spinner {
+            width: 28px;
+            height: 28px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent-indigo);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 12px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                display: none;
+            }
+
+            .main {
+                padding: 20px 16px;
+            }
+
+            .template-cards {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="nav">
+        <div class="nav-inner">
+            <a href="/" class="nav-logo">📄 DocFlow</a>
+            <div class="nav-links">
+                <a href="/">Trang chủ</a>
+                <a href="/api-docs" class="active">API Docs</a>
+                <a href="/docs">Swagger</a>
+                <a href="/ui">Designer</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="layout">
+        <aside class="sidebar">
+            <h4>Bắt đầu</h4>
+            <a href="#overview">Tổng quan</a>
+            <a href="#auth">Xác thực</a>
+            <a href="#quickstart">Quick Start</a>
+
+            <h4>Templates</h4>
+            <a href="#current-templates">Templates hiện tại</a>
+            <a href="#upload">Upload DOCX</a>
+            <a href="#list-templates">Danh sách</a>
+            <a href="#structure">Xem cấu trúc</a>
+
+            <h4>Mappings</h4>
+            <a href="#create-mapping">Tạo mapping</a>
+            <a href="#table-loop">Table Loop</a>
+            <a href="#publish">Publish</a>
+
+            <h4>Render</h4>
+            <a href="#schema">Schema</a>
+            <a href="#render">Render PDF</a>
+            <a href="#download">Download file</a>
+        </aside>
+
+        <main class="main">
+            <h1>📖 API Documentation</h1>
+            <p>Hướng dẫn sử dụng API DocFlow — tạo template, mapping, và xuất PDF.</p>
+
+            <!-- ═══ OVERVIEW ═══ -->
+            <h2 id="overview">Tổng Quan</h2>
+            <p>
+                DocFlow API cho phép bạn tạo template từ file DOCX, thiết kế các trường dữ liệu (mapping),
+                và render ra file DOCX/PDF hoàn chỉnh. Tất cả qua REST API.
+            </p>
+            <div class="alert alert-info">
+                <strong>Base URL:</strong> <code class="inline-code" id="base-url"></code><br>
+                <strong>Swagger UI:</strong> <a href="/docs" style="color:var(--accent-cyan)">/docs</a>
+            </div>
+
+            <!-- ═══ AUTH ═══ -->
+            <h2 id="auth">Xác Thực (Authentication)</h2>
+            <p>API hỗ trợ 2 phương thức xác thực:</p>
+
+            <h3>1. API Key (cho hệ thống bên ngoài)</h3>
+            <p>Thêm header <code class="inline-code">X-API-Key</code> vào mọi request:</p>
+            <pre><span style="color:var(--accent-green)">curl</span> -H <span style="color:var(--accent-amber)">"X-API-Key: Test_apikey_doc_automation_2026"</span> \
+     <span style="color:var(--text-dim)">https://docflow.devhub.ai.vn/api/v1/designer/</span></pre>
+
+            <h3>2. JWT Token (cho frontend / user)</h3>
+            <p>Đăng nhập lấy token, rồi dùng <code class="inline-code">Authorization: Bearer &lt;token&gt;</code>:</p>
+            <pre><span style="color:var(--text-dim)"># Đăng ký</span>
+<span style="color:var(--accent-green)">curl</span> -X POST /api/v1/auth/register \
+  -H <span style="color:var(--accent-amber)">"Content-Type: application/json"</span> \
+  -d <span style="color:var(--accent-amber)">'{"username":"admin","password":"admin123"}'</span>
+
+<span style="color:var(--text-dim)"># Đăng nhập</span>
+<span style="color:var(--accent-green)">curl</span> -X POST /api/v1/auth/login \
+  -H <span style="color:var(--accent-amber)">"Content-Type: application/json"</span> \
+  -d <span style="color:var(--accent-amber)">'{"username":"admin","password":"admin123"}'</span>
+
+<span style="color:var(--text-dim)"># Response → {"access_token": "eyJ..."}</span>
+
+<span style="color:var(--text-dim)"># Dùng token</span>
+<span style="color:var(--accent-green)">curl</span> -H <span style="color:var(--accent-amber)">"Authorization: Bearer eyJ..."</span> \
+     /api/v1/designer/</pre>
+
+            <!-- ═══ QUICKSTART ═══ -->
+            <h2 id="quickstart">Quick Start (5 Bước)</h2>
+            <div class="alert alert-success">
+                <strong>Quy trình:</strong> Upload DOCX → Xem cấu trúc → Tạo mappings → Publish → Render PDF
+            </div>
+            <pre><span style="color:var(--text-dim)"># Bước 1: Upload file DOCX</span>
+<span style="color:var(--accent-green)">curl</span> -X POST /api/v1/designer/raw \
+  -H <span style="color:var(--accent-amber)">"X-API-Key: YOUR_API_KEY"</span> \
+  -F <span style="color:var(--accent-amber)">"file=@contract.docx"</span>
+<span style="color:var(--text-dim)"># → {"template_id": "abc-123..."}</span>
+
+<span style="color:var(--text-dim)"># Bước 2: Xem cấu trúc</span>
+<span style="color:var(--accent-green)">curl</span> /api/v1/designer/<span style="color:var(--accent-cyan)">abc-123</span>/structure
+
+<span style="color:var(--text-dim)"># Bước 3: Tạo mapping (ví dụ: text "Nguyễn Văn A" → biến customer_name)</span>
+<span style="color:var(--accent-green)">curl</span> -X POST /api/v1/designer/<span style="color:var(--accent-cyan)">abc-123</span>/mappings \
+  -H <span style="color:var(--accent-amber)">"Content-Type: application/json"</span> \
+  -d <span style="color:var(--accent-amber)">'{"mapping_type":"paragraph","paragraph_index":2,
+       "original_text":"Nguyễn Văn A","label":"customer_name"}'</span>
+
+<span style="color:var(--text-dim)"># Bước 4: Publish template</span>
+<span style="color:var(--accent-green)">curl</span> -X POST /api/v1/designer/<span style="color:var(--accent-cyan)">abc-123</span>/publish
+
+<span style="color:var(--text-dim)"># Bước 5: Render với data mới</span>
+<span style="color:var(--accent-green)">curl</span> -X POST /api/v1/designer/<span style="color:var(--accent-cyan)">abc-123</span>/render \
+  -H <span style="color:var(--accent-amber)">"Content-Type: application/json"</span> \
+  -d <span style="color:var(--accent-amber)">'{"customer_name":"Trần Thị B","items":[
+       {"stt":"1","description":"Dịch vụ","amount":"5.000.000"}]}'</span>
+<span style="color:var(--text-dim)"># → {"document_id":"xyz","docx_path":"...","pdf_path":"...","status":"completed"}</span></pre>
+
+            <!-- ═══ CURRENT TEMPLATES ═══ -->
+            <h2 id="current-templates">📋 Templates Hiện Tại</h2>
+            <p>Các template đã tạo trong hệ thống. Click vào ID để xem schema và code mẫu.</p>
+            <div id="templates-container">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Đang tải templates...
+                </div>
+            </div>
+
+            <!-- ═══ UPLOAD ═══ -->
+            <h2 id="upload">Upload DOCX</h2>
+            <p><span class="method post">POST</span><span class="endpoint-path">/api/v1/designer/raw</span></p>
+            <p>Upload file DOCX gốc để bắt đầu thiết kế template.</p>
+            <table class="params-table">
+                <thead>
+                    <tr>
+                        <th>Param</th>
+                        <th>Loại</th>
+                        <th>Mô tả</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>file</td>
+                        <td><span class="param-type">File</span> <span class="param-req">required</span></td>
+                        <td>File .docx cần upload</td>
+                    </tr>
+                </tbody>
+            </table>
+            <pre><span style="color:var(--accent-green)">curl</span> -X POST /api/v1/designer/raw \
+  -H <span style="color:var(--accent-amber)">"X-API-Key: YOUR_API_KEY"</span> \
+  -F <span style="color:var(--accent-amber)">"file=@hopdong.docx"</span></pre>
+
+            <!-- ═══ LIST TEMPLATES ═══ -->
+            <h2 id="list-templates">Danh Sách Templates</h2>
+            <p><span class="method get">GET</span><span class="endpoint-path">/api/v1/designer/</span></p>
+            <pre><span style="color:var(--accent-green)">curl</span> /api/v1/designer/ -H <span style="color:var(--accent-amber)">"X-API-Key: YOUR_API_KEY"</span></pre>
+
+            <!-- ═══ STRUCTURE ═══ -->
+            <h2 id="structure">Xem Cấu Trúc Document</h2>
+            <p><span class="method get">GET</span><span
+                    class="endpoint-path">/api/v1/designer/{template_id}/structure</span></p>
+            <p>Trả về danh sách paragraphs và tables với nội dung text, dùng để xác định vị trí mapping.</p>
+            <pre><span style="color:var(--accent-green)">curl</span> /api/v1/designer/<span style="color:var(--accent-cyan)">{template_id}</span>/structure \
+  -H <span style="color:var(--accent-amber)">"X-API-Key: YOUR_API_KEY"</span></pre>
+
+            <!-- ═══ CREATE MAPPING ═══ -->
+            <h2 id="create-mapping">Tạo Mapping</h2>
+            <p><span class="method post">POST</span><span
+                    class="endpoint-path">/api/v1/designer/{template_id}/mappings</span></p>
+            <p>3 loại mapping:</p>
+
+            <h3>Paragraph Mapping</h3>
+            <p>Thay thế text trong đoạn văn bản bằng biến.</p>
+            <table class="params-table">
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Type</th>
+                        <th>Mô tả</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>mapping_type</td>
+                        <td><span class="param-type">string</span></td>
+                        <td>"paragraph"</td>
+                    </tr>
+                    <tr>
+                        <td>paragraph_index</td>
+                        <td><span class="param-type">int</span> <span class="param-req">req</span></td>
+                        <td>Thứ tự paragraph (0-based)</td>
+                    </tr>
+                    <tr>
+                        <td>original_text</td>
+                        <td><span class="param-type">string</span> <span class="param-req">req</span></td>
+                        <td>Text gốc cần thay thế</td>
+                    </tr>
+                    <tr>
+                        <td>label</td>
+                        <td><span class="param-type">string</span> <span class="param-req">req</span></td>
+                        <td>Tên biến (lowercase, underscores)</td>
+                    </tr>
+                    <tr>
+                        <td>field_type</td>
+                        <td><span class="param-type">string</span> <span class="param-opt">opt</span></td>
+                        <td>string | number | date | currency</td>
+                    </tr>
+                    <tr>
+                        <td>required</td>
+                        <td><span class="param-type">bool</span> <span class="param-opt">opt</span></td>
+                        <td>Bắt buộc khi render (default: true)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Table Cell Mapping</h3>
+            <p>Thay thế nội dung 1 ô trong bảng.</p>
+            <pre>{
+  <span style="color:var(--accent-cyan)">"mapping_type"</span>: <span style="color:var(--accent-amber)">"table_cell"</span>,
+  <span style="color:var(--accent-cyan)">"table_index"</span>: 0,
+  <span style="color:var(--accent-cyan)">"row_index"</span>: 1,
+  <span style="color:var(--accent-cyan)">"col_index"</span>: 2,
+  <span style="color:var(--accent-cyan)">"original_text"</span>: <span style="color:var(--accent-amber)">"5.000.000"</span>,
+  <span style="color:var(--accent-cyan)">"label"</span>: <span style="color:var(--accent-amber)">"amount"</span>,
+  <span style="color:var(--accent-cyan)">"field_type"</span>: <span style="color:var(--accent-amber)">"currency"</span>
+}</pre>
+
+            <!-- ═══ TABLE LOOP ═══ -->
+            <h2 id="table-loop">Table Loop (Array / Bảng động)</h2>
+            <p><span class="method post">POST</span><span
+                    class="endpoint-path">/api/v1/designer/{template_id}/mappings</span></p>
+            <p>Tạo bảng dữ liệu động — hệ thống tự nhân bản row theo số lượng phần tử trong mảng.</p>
+            <div class="alert alert-info">
+                <strong>Hỗ trợ multi-group:</strong> Bạn có thể tạo nhiều loop group trên cùng 1 bảng.
+                Ví dụ: cột 0-2 → <code class="inline-code">items1</code>, cột 3-5 → <code
+                    class="inline-code">items2</code>.
+            </div>
+            <pre>{
+  <span style="color:var(--accent-cyan)">"mapping_type"</span>: <span style="color:var(--accent-amber)">"table_loop"</span>,
+  <span style="color:var(--accent-cyan)">"table_index"</span>: 0,
+  <span style="color:var(--accent-cyan)">"data_row_index"</span>: 1,
+  <span style="color:var(--accent-cyan)">"loop_variable"</span>: <span style="color:var(--accent-amber)">"items"</span>,
+  <span style="color:var(--accent-cyan)">"cell_labels"</span>: [
+    {<span style="color:var(--accent-cyan)">"col_index"</span>: 0, <span style="color:var(--accent-cyan)">"label"</span>: <span style="color:var(--accent-amber)">"stt"</span>},
+    {<span style="color:var(--accent-cyan)">"col_index"</span>: 1, <span style="color:var(--accent-cyan)">"label"</span>: <span style="color:var(--accent-amber)">"description"</span>},
+    {<span style="color:var(--accent-cyan)">"col_index"</span>: 2, <span style="color:var(--accent-cyan)">"label"</span>: <span style="color:var(--accent-amber)">"amount"</span>}
+  ]
+}</pre>
+
+            <!-- ═══ PUBLISH ═══ -->
+            <h2 id="publish">Publish Template</h2>
+            <p><span class="method post">POST</span><span
+                    class="endpoint-path">/api/v1/designer/{template_id}/publish</span></p>
+            <p>Khóa template và apply mappings. Sau khi publish, template sẵn sàng để render.</p>
+            <div class="alert alert-warn">
+                <strong>Lưu ý:</strong> Sau khi publish, không thể thêm/sửa mappings. Hãy chắc chắn đã thiết kế đầy đủ.
+            </div>
+            <pre><span style="color:var(--accent-green)">curl</span> -X POST /api/v1/designer/<span style="color:var(--accent-cyan)">{template_id}</span>/publish \
+  -H <span style="color:var(--accent-amber)">"X-API-Key: YOUR_API_KEY"</span></pre>
+
+            <!-- ═══ SCHEMA ═══ -->
+            <h2 id="schema">Schema (Xem form dữ liệu)</h2>
+            <p><span class="method get">GET</span><span
+                    class="endpoint-path">/api/v1/designer/{template_id}/schema</span></p>
+            <p>Trả về danh sách các trường cần điền khi render. Dùng để tạo form tự động.</p>
+            <pre><span style="color:var(--accent-green)">curl</span> /api/v1/designer/<span style="color:var(--accent-cyan)">{template_id}</span>/schema \
+  -H <span style="color:var(--accent-amber)">"X-API-Key: YOUR_API_KEY"</span>
+
+<span style="color:var(--text-dim)"># Response example:</span>
+{
+  <span style="color:var(--accent-cyan)">"fields"</span>: [
+    {<span style="color:var(--accent-cyan)">"name"</span>: <span style="color:var(--accent-amber)">"customer_name"</span>, <span style="color:var(--accent-cyan)">"type"</span>: <span style="color:var(--accent-amber)">"string"</span>, <span style="color:var(--accent-cyan)">"required"</span>: true},
+    {<span style="color:var(--accent-cyan)">"name"</span>: <span style="color:var(--accent-amber)">"items"</span>, <span style="color:var(--accent-cyan)">"type"</span>: <span style="color:var(--accent-amber)">"array"</span>, <span style="color:var(--accent-cyan)">"sub_fields"</span>: [
+      {<span style="color:var(--accent-cyan)">"name"</span>: <span style="color:var(--accent-amber)">"stt"</span>}, {<span style="color:var(--accent-cyan)">"name"</span>: <span style="color:var(--accent-amber)">"description"</span>}, {<span style="color:var(--accent-cyan)">"name"</span>: <span style="color:var(--accent-amber)">"amount"</span>}
+    ]}
+  ]
+}</pre>
+
+            <!-- ═══ RENDER ═══ -->
+            <h2 id="render">Render Document</h2>
+            <p><span class="method post">POST</span><span
+                    class="endpoint-path">/api/v1/designer/{template_id}/render</span></p>
+            <p>Gửi dữ liệu → nhận file DOCX + PDF.</p>
+            <table class="params-table">
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Type</th>
+                        <th>Mô tả</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>{field_name}</td>
+                        <td><span class="param-type">string</span></td>
+                        <td>Giá trị cho mỗi trường (theo schema)</td>
+                    </tr>
+                    <tr>
+                        <td>{array_field}</td>
+                        <td><span class="param-type">array</span></td>
+                        <td>Mảng object cho table loop</td>
+                    </tr>
+                </tbody>
+            </table>
+            <pre><span style="color:var(--accent-green)">curl</span> -X POST /api/v1/designer/<span style="color:var(--accent-cyan)">{template_id}</span>/render \
+  -H <span style="color:var(--accent-amber)">"X-API-Key: YOUR_API_KEY"</span> \
+  -H <span style="color:var(--accent-amber)">"Content-Type: application/json"</span> \
+  -d <span style="color:var(--accent-amber)">'{
+    "customer_name": "Trần Thị B",
+    "address": "456 Nguyễn Huệ, Q3",
+    "items": [
+      {"stt": "1", "description": "Tư vấn", "amount": "5.000.000"},
+      {"stt": "2", "description": "Triển khai", "amount": "10.000.000"}
+    ]
+  }'</span>
+
+<span style="color:var(--text-dim)"># Response:</span>
+{
+  <span style="color:var(--accent-cyan)">"document_id"</span>: <span style="color:var(--accent-amber)">"xyz-789"</span>,
+  <span style="color:var(--accent-cyan)">"docx_path"</span>: <span style="color:var(--accent-amber)">"storage/rendered/xyz-789.docx"</span>,
+  <span style="color:var(--accent-cyan)">"pdf_path"</span>: <span style="color:var(--accent-amber)">"storage/pdfs/xyz-789.pdf"</span>,
+  <span style="color:var(--accent-cyan)">"status"</span>: <span style="color:var(--accent-amber)">"completed"</span>
+}</pre>
+
+            <!-- ═══ DOWNLOAD ═══ -->
+            <h2 id="download">Download File</h2>
+            <p><span class="method get">GET</span><span class="endpoint-path">/api/v1/files/download/{filename}</span>
+            </p>
+            <p>Download file DOCX hoặc PDF đã render.</p>
+            <pre><span style="color:var(--text-dim)"># Download DOCX</span>
+<span style="color:var(--accent-green)">curl</span> -O /api/v1/files/download/<span style="color:var(--accent-cyan)">xyz-789.docx</span> \
+  -H <span style="color:var(--accent-amber)">"X-API-Key: YOUR_API_KEY"</span>
+
+<span style="color:var(--text-dim)"># Download PDF</span>
+<span style="color:var(--accent-green)">curl</span> -O /api/v1/files/download/<span style="color:var(--accent-cyan)">xyz-789.pdf</span> \
+  -H <span style="color:var(--accent-amber)">"X-API-Key: YOUR_API_KEY"</span></pre>
+
+            <div style="height:80px"></div>
+        </main>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        const API_KEY = "Test_apikey_doc_automation_2026";
+
+        document.getElementById("base-url").textContent = `${API_BASE}/api/v1/designer`;
+
+        // Load templates dynamically
+        async function loadTemplates() {
+            const container = document.getElementById("templates-container");
+            try {
+                const token = localStorage.getItem("access_token");
+                const headers = {};
+                if (token) headers["Authorization"] = `Bearer ${token}`;
+                else headers["X-API-Key"] = API_KEY;
+
+                const resp = await fetch(`${API_BASE}/api/v1/designer/`, { headers, credentials: "include" });
+                if (!resp.ok) throw new Error("Auth required");
+                const data = await resp.json();
+
+                if (!data.templates || data.templates.length === 0) {
+                    container.innerHTML = '<div class="alert alert-info">Chưa có template nào. <a href="/ui" style="color:var(--accent-cyan)">Tạo template đầu tiên →</a></div>';
+                    return;
+                }
+
+                // For each template, load schema
+                let html = '<div class="template-cards">';
+                for (const tpl of data.templates) {
+                    let schemaHtml = '';
+                    try {
+                        const sResp = await fetch(`${API_BASE}/api/v1/designer/${tpl.id}/schema`, { headers, credentials: "include" });
+                        if (sResp.ok) {
+                            const schema = await sResp.json();
+                            if (schema.fields && schema.fields.length > 0) {
+                                schemaHtml = '<div class="tpl-fields">';
+                                schema.fields.forEach(f => {
+                                    const cls = f.type === 'array' ? 'tpl-field array' : 'tpl-field';
+                                    schemaHtml += `<span class="${cls}">${f.name}${f.type === 'array' ? '[]' : ''}</span>`;
+                                });
+                                schemaHtml += '</div>';
+
+                                // Build render example
+                                const renderData = {};
+                                schema.fields.forEach(f => {
+                                    if (f.type === 'array' && f.sub_fields) {
+                                        const item = {};
+                                        f.sub_fields.forEach(sf => item[sf.name] = `(${sf.name})`);
+                                        renderData[f.name] = [item];
+                                    } else {
+                                        renderData[f.name] = `(${f.name})`;
+                                    }
+                                });
+                                schemaHtml += `<pre style="margin-top:10px;font-size:0.75rem;max-height:200px;overflow:auto"><span style="color:var(--text-dim)">// Render example</span>
+curl -X POST ${API_BASE}/api/v1/designer/${tpl.id}/render \\
+  -H "X-API-Key: YOUR_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '${JSON.stringify(renderData, null, 2)}'</pre>`;
+                            }
+                        }
+                    } catch { }
+
+                    const statusCls = tpl.status === 'published' ? 'published' : 'draft';
+                    html += `
+                <div class="tpl-card">
+                    <div class="tpl-card-header">
+                        <div class="tpl-card-name">📄 ${esc(tpl.name)}</div>
+                        <span class="tpl-card-status ${statusCls}">${tpl.status}</span>
+                    </div>
+                    <div class="tpl-card-id">${tpl.id}</div>
+                    <div class="tpl-card-meta">
+                        <span>📎 ${tpl.mappings_count || 0} mappings</span>
+                        <span>📅 ${tpl.created_at ? new Date(tpl.created_at).toLocaleDateString('vi') : '—'}</span>
+                    </div>
+                    ${schemaHtml}
+                </div>`;
+                }
+                html += '</div>';
+                container.innerHTML = html;
+            } catch (e) {
+                container.innerHTML = `<div class="alert alert-warn"><strong>Cần đăng nhập</strong> để xem templates. <a href="/login" style="color:var(--accent-cyan)">Đăng nhập →</a></div>`;
+            }
+        }
+
+        function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+        // Sidebar active on scroll
+        const sections = document.querySelectorAll('h2[id]');
+        const sidebarLinks = document.querySelectorAll('.sidebar a');
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(s => {
+                if (window.scrollY >= s.offsetTop - 100) current = s.id;
+            });
+            sidebarLinks.forEach(a => {
+                a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+            });
+        });
+
+        loadTemplates();
+    </script>
+</body>
+
+</html>
