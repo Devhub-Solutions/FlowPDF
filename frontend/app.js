@@ -214,7 +214,13 @@ function navigateTo(viewName) {
 function getAuthHeaders() {
     const h = {};
     const token = localStorage.getItem("access_token");
-    if (token) h["Authorization"] = `Bearer ${token}`;
+    if (token) {
+        h["Authorization"] = `Bearer ${token}`;
+    } else {
+        // If no JWT token, include API key for local/dev access
+        const apiKey = (window && window.__API_KEY) ? window.__API_KEY : null;
+        if (apiKey) h["X-API-Key"] = apiKey;
+    }
     return h;
 }
 function handle401(r) {
@@ -271,7 +277,11 @@ async function loadDashboard() {
         document.getElementById("stat-draft").textContent = templates.filter(t => t.status === "draft").length;
         document.getElementById("stat-published").textContent = templates.filter(t => t.status === "published").length;
         fetch(`${API_BASE}/api/v1/files/list`).then(r => r.json()).then(d => document.getElementById("stat-files").textContent = d.files?.length || 0).catch(() => { });
-    } catch (e) { showToast("Failed to load templates", "error"); }
+    } catch (e) {
+        showToast("Failed to load templates", "error");
+        // Log chi tiết lỗi ra console để debug
+        console.error("[loadDashboard] Error loading templates:", e);
+    }
 }
 
 function renderTemplatesList(templates) {

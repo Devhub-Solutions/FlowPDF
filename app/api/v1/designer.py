@@ -1,9 +1,4 @@
-"""
-Template Designer API v2
-- Mappings use original_text (not offsets) for reliable matching
-- Tables returned as structured rows/cols for easy HTML rendering
-- Table loop (array) mapping support
-"""
+
 
 import os
 import uuid
@@ -39,6 +34,15 @@ async def upload_raw_template(file: UploadFile = File(...)):
     template = create_template(name=file.filename, file_path=file_path)
     return {"message": f"Template '{file.filename}' uploaded", "template_id": template["id"], "status": "draft"}
 
+@router.get("/list")
+async def get_all_templates_list():
+    return {"templates": list_templates()}
+"""
+Template Designer API v2
+- Mappings use original_text (not offsets) for reliable matching
+- Tables returned as structured rows/cols for easy HTML rendering
+- Table loop (array) mapping support
+"""
 
 @router.get("/")
 async def get_all_templates():

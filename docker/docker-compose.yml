@@ -1,5 +1,4 @@
 version: "3.9"
-
 services:
   mysql:
     image: mysql:8.0
@@ -31,6 +30,27 @@ services:
       PMA_USER: root
       PMA_PASSWORD: rootpass123
 
+  app:
+    build:
+      context: ..
+      dockerfile: docker/app.Dockerfile
+    container_name: doc_app
+    restart: unless-stopped
+    depends_on:
+      - mysql
+      - redis
+    environment:
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USER=docuser
+      - DB_PASSWORD=docpass123
+      - DB_NAME=doc_automation
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../:/app
   redis:
     image: redis:7-alpine
     container_name: doc_redis

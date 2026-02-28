@@ -1,8 +1,9 @@
+passlib
+PyJWT
 fastapi
 uvicorn
 pydantic-settings
 python-dotenv
-supabase-py
 celery[redis]
 pandas
 openpyxl
