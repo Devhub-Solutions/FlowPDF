@@ -1,46 +1,44 @@
-import os
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
+from pathlib import Path
+
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = "Document Automation System"
-    API_V1_STR: str = "/api/v1"
-    
-    # MySQL Configuration
-    MYSQL_HOST: str = "localhost"
-    MYSQL_PORT: int = 3306
-    MYSQL_USER: str = "docuser"
-    MYSQL_PASSWORD: str = "docpass123"
-    MYSQL_DATABASE: str = "doc_automation"
-    
-    @property
-    def DATABASE_URL(self) -> str:
-        return f"mysql+pymysql://{self.MYSQL_USER}:{self.MYSQL_PASSWORD}@{self.MYSQL_HOST}:{self.MYSQL_PORT}/{self.MYSQL_DATABASE}?charset=utf8mb4"
-    
-    # Auth Configuration
-    JWT_SECRET_KEY: str = "doc_auto_jwt_secret_2026_xK9mN3pQ"
-    JWT_ALGORITHM: str = "HS256"
-    JWT_EXPIRE_MINUTES: int = 480  # 8 hours
-    API_KEY: str = "Test_apikey_doc_automation_2026"
-    
-    # Redis Configuration
-    REDIS_URL: str = "redis://localhost:6379/0"
-    
-    # Storage Configuration
-    STORAGE_BUCKET: str = "documents"
-    
-    # Local storage path
-    LOCAL_STORAGE_PATH: str = os.getenv("STORAGE_PATH", os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "storage"))
-    
-    model_config = {
-        "case_sensitive": True,
-        "env_file": ".env",
-        "env_file_encoding": "utf-8",
-        "extra": "ignore",
-    }
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
-@lru_cache()
+    # App
+    APP_NAME: str = "DocGen API"
+    APP_VERSION: str = "1.0.0"
+    DEBUG: bool = False
+
+    # Database
+    DATABASE_URL: str = "mysql+aiomysql://docgen:docgenpassword@db:3306/docgen"
+
+    # Storage
+    BASE_DIR: Path = Path(__file__).resolve().parent.parent.parent
+    UPLOAD_DIR: Path = BASE_DIR / "storage" / "uploads"
+    OUTPUT_DIR: Path = BASE_DIR / "storage" / "outputs"
+    TEMP_DIR: Path = BASE_DIR / "storage" / "temp"
+
+    # LibreOffice
+    LIBREOFFICE_BIN: str = "libreoffice"
+
+    # Ollama Cloud AI (cho auto-label)
+    OLLAMA_API_KEY: str = "658916e60a664876bfed75d75c9c717d.O9cj7KJSt4_zw5kmMFfNnorf"  # Lấy tại https://ollama.com/settings/keys
+    AI_ENABLED: bool = True
+
+    # Rate limiting
+    MAX_CONCURRENT_RENDERS: int = 10
+    RENDER_TIMEOUT_SECONDS: int = 60
+
+    # API Key (đơn giản, có thể nâng lên JWT sau)
+    API_SECRET_KEY: str = "changeme-in-production"
+
+    def ensure_dirs(self):
+        for d in [self.UPLOAD_DIR, self.OUTPUT_DIR, self.TEMP_DIR]:
+            d.mkdir(parents=True, exist_ok=True)
+
+
+@lru_cache
 def get_settings() -> Settings:
     return Settings()
-
-settings = get_settings()
