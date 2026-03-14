@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
+import path from 'path';
+import fs from 'fs';
 import swaggerUi from 'swagger-ui-express';
 import routes from './routes';
 import { swaggerSpec } from './config/swagger';
@@ -27,6 +29,19 @@ app.get('/api-docs.json', (_req, res) => {
 // Routes
 app.use('/api', routes);
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
+
+// Serve frontend static files (unified build)
+const publicDir = path.join(__dirname, '../public');
+if (fs.existsSync(publicDir)) {
+  app.use(express.static(publicDir));
+  // SPA fallback – serve index.html for non-API routes
+  app.use((req, res, next) => {
+    if (req.path.startsWith('/api/') || req.path.startsWith('/api-docs')) {
+      return next();
+    }
+    res.sendFile(path.join(publicDir, 'index.html'));
+  });
+}
 
 // 404 handler
 app.use((_req, res) => {

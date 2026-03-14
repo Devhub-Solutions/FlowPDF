@@ -1,10 +1,10 @@
 services:
 
-  flowpdf-api:
+  flowpdf:
     build:
-      context: ./api
+      context: .
       dockerfile: Dockerfile
-    container_name: flowpdf-api
+    container_name: flowpdf
     ports:
       - "8080:8080"
     environment:
@@ -21,17 +21,6 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-
-  flowpdf-frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: flowpdf-frontend
-    ports:
-      - "3001:80"
-    depends_on:
-      - flowpdf-api
-    restart: unless-stopped
 
   gotenberg:
     image: gotenberg/gotenberg:8

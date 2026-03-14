@@ -13,8 +13,7 @@ React UI  →  FlowPDF API  →  Docxtemplater  →  DOCX  →  Gotenberg  →  
 
 | Service | Port | Description |
 |---|---|---|
-| `flowpdf-frontend` | 3001 | React UI (Nginx) |
-| `flowpdf-api` | 8080 | NodeJS Express API |
+| `flowpdf` | 8080 | Unified app (API + UI) |
 | `gotenberg` | 3000 | LibreOffice-based PDF converter |
 
 ---
@@ -28,16 +27,15 @@ cd flowpdf
 docker compose up --build
 ```
 
-- **UI**: http://localhost:3001  
-- **API**: http://localhost:8080  
+- **UI**: http://localhost:8080  
+- **API**: http://localhost:8080/api  
 - **API Docs (Swagger)**: http://localhost:8080/api-docs  
 - **Gotenberg**: http://localhost:3000
 
-### Pull Pre-built Images
+### Pull Pre-built Image
 
 ```bash
-docker pull ghcr.io/devhub-solutions/flowpdf-api:latest
-docker pull ghcr.io/devhub-solutions/flowpdf-frontend:latest
+docker pull ghcr.io/devhub-solutions/flowpdf:latest
 ```
 
 ---
@@ -255,9 +253,8 @@ Docker images are automatically built and pushed to GitHub Container Registry on
 | Push tag `v*` | Build & push with semver tags (`1.0.0`, `1.0`) |
 | Pull request | Build only (no push) |
 
-**Images:**
-- `ghcr.io/devhub-solutions/flowpdf-api`
-- `ghcr.io/devhub-solutions/flowpdf-frontend`
+**Image:**
+- `ghcr.io/devhub-solutions/flowpdf`
 
 ---
 
@@ -293,7 +290,7 @@ flowpdf/
 │   │   │   └── gotenbergService.ts # PDF conversion + merge + retry
 │   │   ├── utils/logger.ts
 │   │   └── index.ts
-│   ├── Dockerfile
+│   ├── Dockerfile                   # Standalone API image
 │   ├── package.json
 │   └── tsconfig.json
 │
@@ -302,10 +299,11 @@ flowpdf/
 │   │   ├── App.tsx                 # Main UI
 │   │   ├── services/api.ts
 │   │   └── main.tsx
-│   ├── Dockerfile
+│   ├── Dockerfile                   # Standalone frontend image
 │   ├── nginx.conf
 │   └── vite.config.ts
 │
+├── Dockerfile                       # Unified image (API + UI)
 ├── docker-compose.yml
 └── README.md
 ```
