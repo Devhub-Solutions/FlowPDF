@@ -1,5 +1,5 @@
 import './index.css';
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import { renderToPdf, analyzePlaceholders } from './services/api';
 import PizZip from 'pizzip';
 
@@ -53,6 +53,18 @@ function RenderTab() {
   const [urlInput, setUrlInput] = useState('');
 
   const isJsonValid = (() => { try { JSON.parse(jsonData); return true; } catch { return false; } })();
+
+  const imagePreviews = useMemo(() => {
+    const urls: Record<string, string> = {};
+    for (const [key, file] of Object.entries(images)) {
+      urls[key] = URL.createObjectURL(file);
+    }
+    return urls;
+  }, [images]);
+
+  useEffect(() => {
+    return () => { Object.values(imagePreviews).forEach(u => URL.revokeObjectURL(u)); };
+  }, [imagePreviews]);
 
   const handleTemplateUpload = async (file: File) => {
     setTemplate(file); setAnalyzing(true); setPlaceholders([]); setPdfUrl(null); setStatus('idle');
@@ -172,10 +184,13 @@ function RenderTab() {
         {/* Images */}
         <div className="card">
           <div className="card-header">
-            <StepBadge n={3} done={false} />
+            <StepBadge n={3} done={Object.keys(images).length > 0} />
             <span className="card-title">Images</span>
             <span className="text-xs text-zinc-600 ml-auto">optional</span>
           </div>
+          {imgFields.length === 0 && template && (
+            <p className="text-xs text-zinc-600 mb-2">Use <code className="text-lime-400 font-mono">{'{%signature}'}</code>, <code className="text-lime-400 font-mono">{'{%logo}'}</code>, etc. in template to embed images</p>
+          )}
           <div className="flex flex-col gap-2">
             {(imgFields.length > 0
               ? imgFields.map(p => p.replace(/^%/, ''))
@@ -184,7 +199,12 @@ function RenderTab() {
               <label key={field} className="cursor-pointer">
                 <div className={`flex items-center gap-3 p-2.5 rounded-xl border transition-all
                   ${images[field] ? 'border-lime-400/30 bg-lime-400/5' : 'border-zinc-800 bg-zinc-900/50 hover:border-zinc-700'}`}>
-                  <div className="w-7 h-7 rounded-lg bg-zinc-800 flex items-center justify-center flex-shrink-0"><Ico.img /></div>
+                  {imagePreviews[field] ? (
+                    <img src={imagePreviews[field]} alt={field}
+                      className="w-7 h-7 rounded-lg object-cover flex-shrink-0 border border-lime-400/20"/>
+                  ) : (
+                    <div className="w-7 h-7 rounded-lg bg-zinc-800 flex items-center justify-center flex-shrink-0"><Ico.img /></div>
+                  )}
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-mono text-zinc-300 capitalize">{field}</p>
                     <p className="text-xs text-zinc-600 truncate">{images[field] ? images[field].name : 'click to upload'}</p>
@@ -287,16 +307,19 @@ function RenderTab() {
         )}
 
         {/* Curl snippet */}
-        {renderMode === 'template' && template && (
+        {renderMode === 'template' && template && (() => {
+          const imgFlags = Object.entries(images).map(([k, f]) => `\n  -F "${k}=@${f.name}" \\`).join('');
+          return (
           <div className="card">
             <p className="text-xs font-mono text-zinc-600 mb-2 uppercase tracking-wider">cURL</p>
             <pre className="text-xs font-mono text-zinc-400 overflow-x-auto whitespace-pre-wrap break-all leading-relaxed">{`curl -X POST http://localhost:8080/api/render \\
   -H "Authorization: Bearer ${apiKey}" \\
   -F "template=@${template.name}" \\
-  -F 'data=${jsonData.replace(/\s+/g,' ')}' \\
+  -F 'data=${jsonData.replace(/\s+/g,' ')}' \\${imgFlags}
   --output doc.pdf`}</pre>
           </div>
-        )}
+          );
+        })()}
         {renderMode === 'html' && htmlInput.trim() && (
           <div className="card">
             <p className="text-xs font-mono text-zinc-600 mb-2 uppercase tracking-wider">cURL</p>
