@@ -1005,8 +1005,15 @@ function MergeTab() {
 
   const addFiles = (newFiles: FileList | File[]) => {
     const arr = Array.from(newFiles);
-    setFiles(prev => [...prev, ...arr].slice(0, 20));
-    setPdfUrl(null); setStatus('idle'); setError(null);
+    setFiles(prev => {
+      const combined = [...prev, ...arr];
+      if (combined.length > 20) {
+        setError(`Maximum 20 files allowed. ${combined.length - 20} file(s) were not added.`);
+        return combined.slice(0, 20);
+      }
+      return combined;
+    });
+    setPdfUrl(null); setStatus('idle');
   };
 
   const removeFile = (idx: number) => {
@@ -1034,8 +1041,7 @@ function MergeTab() {
     if (files.length === 0) return;
     setStatus('loading'); setError(null); setPdfUrl(null);
     try {
-      const order = files.map(f => f.name);
-      const blob = await combinePdfs(files, order, apiKey);
+      const blob = await combinePdfs(files, null, apiKey);
       setPdfUrl(URL.createObjectURL(blob));
       setStatus('success');
     } catch (e) {
