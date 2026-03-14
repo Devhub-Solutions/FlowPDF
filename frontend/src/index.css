@@ -1,0 +1,92 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #09090b;
+  --surface: #111113;
+  --border: #27272a;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg);
+  color: #e4e4e7;
+  font-family: 'Outfit', 'DM Sans', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #52525b; }
+
+/* Grid bg */
+.grid-bg {
+  background-image:
+    linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* ── Component classes ─────────────────────────────────── */
+@layer components {
+
+  .card {
+    @apply bg-zinc-900/60 border border-zinc-800 rounded-2xl p-4 backdrop-blur-sm;
+  }
+
+  .card-header {
+    @apply flex items-center gap-2.5 mb-4;
+  }
+
+  .card-title {
+    @apply text-xs font-mono font-semibold text-zinc-400 uppercase tracking-wider;
+  }
+
+  /* drop-zone: no group/hover variants in @apply — use plain CSS instead */
+  .drop-zone {
+    @apply border-2 border-dashed border-zinc-700 rounded-xl p-8 text-center cursor-pointer transition-all duration-200 flex flex-col items-center;
+  }
+  .drop-zone:hover {
+    border-color: rgba(163, 230, 53, 0.4);
+    background-color: rgba(163, 230, 53, 0.03);
+  }
+
+  .input {
+    @apply w-full px-3 py-2.5 bg-zinc-800/60 border border-zinc-700 rounded-xl text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition-all;
+  }
+
+  .icon-btn {
+    @apply w-7 h-7 rounded-lg bg-zinc-800 flex items-center justify-center text-zinc-500 transition-all cursor-pointer;
+  }
+  .icon-btn:hover {
+    @apply bg-zinc-700;
+  }
+
+  .btn-secondary {
+    @apply px-4 py-2 rounded-xl border border-zinc-700 bg-zinc-800/60 text-zinc-300 transition-all text-sm font-medium;
+  }
+  .btn-secondary:hover {
+    @apply border-zinc-600 bg-zinc-700/60;
+  }
+
+  .field-label {
+    @apply block text-xs font-mono text-zinc-500 mb-1.5 uppercase tracking-wider;
+  }
+}
+
+/* Animations */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-up { animation: fadeUp 0.35s ease forwards; }

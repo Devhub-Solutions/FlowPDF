@@ -1,0 +1,51 @@
+services:
+
+  flowpdf-api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: flowpdf-api
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: 8080
+      FLOWPDF_API_KEY: flowpdf_dev_key
+      GOTENBERG_URL: http://gotenberg:3000
+      LOG_LEVEL: info
+    depends_on:
+      gotenberg:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  flowpdf-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: flowpdf-frontend
+    ports:
+      - "3001:80"
+    depends_on:
+      - flowpdf-api
+    restart: unless-stopped
+
+  gotenberg:
+    image: gotenberg/gotenberg:8
+    container_name: flowpdf-gotenberg
+    ports:
+      - "3000:3000"
+    command:
+      - "gotenberg"
+      - "--chromium-disable-routes=false"
+      - "--libreoffice-disable-routes=false"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
