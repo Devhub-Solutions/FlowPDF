@@ -61,20 +61,11 @@ export async function renderPdf(req: MulterRequest, res: Response): Promise<void
 
     // Collect images
     const images: Record<string, Buffer> = {};
-    const imageFields = ['signature', 'logo'];
-    for (const field of imageFields) {
-      const imageFiles = files?.[field];
-      if (imageFiles && imageFiles.length > 0) {
-        images[field] = imageFiles[0].buffer;
-        logger.info(`Received image: ${field}`);
-      }
-    }
-
-    // Also collect any other image uploads
     if (files) {
       for (const [key, fileArray] of Object.entries(files)) {
-        if (!['template'].includes(key) && fileArray.length > 0) {
+        if (key !== 'template' && fileArray.length > 0) {
           images[key] = fileArray[0].buffer;
+          logger.info(`Received image: ${key}`);
         }
       }
     }
@@ -143,20 +134,11 @@ export async function previewPdf(req: MulterRequest, res: Response): Promise<voi
 
     // Collect images
     const images: Record<string, Buffer> = {};
-    const imageFields = ['signature', 'logo'];
-    for (const field of imageFields) {
-      const imageFiles = files?.[field];
-      if (imageFiles && imageFiles.length > 0) {
-        images[field] = imageFiles[0].buffer;
-        logger.info(`Preview received image: ${field}`);
-      }
-    }
-
-    // Also collect any other image uploads
     if (files) {
       for (const [key, fileArray] of Object.entries(files)) {
-        if (!['template'].includes(key) && fileArray.length > 0) {
+        if (key !== 'template' && fileArray.length > 0) {
           images[key] = fileArray[0].buffer;
+          logger.info(`Preview received image: ${key}`);
         }
       }
     }
