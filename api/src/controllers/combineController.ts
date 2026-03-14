@@ -25,10 +25,8 @@ const SUPPORTED_MIMETYPES: Record<string, string> = {
 const SUPPORTED_EXTENSIONS = ['.pdf', '.jpg', '.jpeg', '.png', '.tif', '.tiff', '.bmp', '.gif', '.doc', '.docx'];
 
 function getFileExtension(filename: string): string {
-  const ext = filename.lastIndexOf('.') >= 0
-    ? filename.slice(filename.lastIndexOf('.')).toLowerCase()
-    : '';
-  return ext;
+  const dotIndex = filename.lastIndexOf('.');
+  return dotIndex >= 0 ? filename.slice(dotIndex).toLowerCase() : '';
 }
 
 function isFileSupported(file: MulterFile): boolean {

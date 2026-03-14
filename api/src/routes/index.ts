@@ -23,7 +23,8 @@ const multiUpload = upload.fields([
   { name: 'image3', maxCount: 1 },
 ]);
 
-const combineUpload = upload.array('files', 20);
+const MAX_COMBINE_FILES = 20;
+const combineUpload = upload.array('files', MAX_COMBINE_FILES);
 
 /**
  * @openapi
