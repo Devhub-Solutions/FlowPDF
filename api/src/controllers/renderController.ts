@@ -61,20 +61,11 @@ export async function renderPdf(req: MulterRequest, res: Response): Promise<void
 
     // Collect images
     const images: Record<string, Buffer> = {};
-    const imageFields = ['signature', 'logo'];
-    for (const field of imageFields) {
-      const imageFiles = files?.[field];
-      if (imageFiles && imageFiles.length > 0) {
-        images[field] = imageFiles[0].buffer;
-        logger.info(`Received image: ${field}`);
-      }
-    }
-
-    // Also collect any other image uploads
     if (files) {
       for (const [key, fileArray] of Object.entries(files)) {
-        if (!['template'].includes(key) && fileArray.length > 0) {
+        if (key !== 'template' && fileArray.length > 0) {
           images[key] = fileArray[0].buffer;
+          logger.info(`Received image: ${key}`);
         }
       }
     }
@@ -98,6 +89,30 @@ export async function renderPdf(req: MulterRequest, res: Response): Promise<void
 export async function previewPdf(req: MulterRequest, res: Response): Promise<void> {
   try {
     const files = req.files as { [fieldname: string]: MulterFile[] };
+
+    // Handle HTML preview
+    if (req.body.html) {
+      const pdfBuffer = await convertHtmlToPdf(req.body.html as string);
+      res.json({
+        success: true,
+        pdf: pdfBuffer.toString('base64'),
+        size: pdfBuffer.length,
+      });
+      return;
+    }
+
+    // Handle URL preview
+    if (req.body.url) {
+      const pdfBuffer = await convertUrlToPdf(req.body.url as string);
+      res.json({
+        success: true,
+        pdf: pdfBuffer.toString('base64'),
+        size: pdfBuffer.length,
+      });
+      return;
+    }
+
+    // Handle DOCX template preview
     const templateFiles = files?.['template'];
 
     if (!templateFiles || templateFiles.length === 0) {
@@ -117,7 +132,18 @@ export async function previewPdf(req: MulterRequest, res: Response): Promise<voi
       }
     }
 
-    const docxBuffer = renderDocx({ templateBuffer, data });
+    // Collect images
+    const images: Record<string, Buffer> = {};
+    if (files) {
+      for (const [key, fileArray] of Object.entries(files)) {
+        if (key !== 'template' && fileArray.length > 0) {
+          images[key] = fileArray[0].buffer;
+          logger.info(`Preview received image: ${key}`);
+        }
+      }
+    }
+
+    const docxBuffer = renderDocx({ templateBuffer, data, images });
     const pdfBuffer = await convertDocxToPdf(docxBuffer);
 
     res.json({

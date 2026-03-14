@@ -135,7 +135,9 @@ router.post('/render', checkApiKey, multiUpload, renderPdf);
  * /preview:
  *   post:
  *     summary: Preview DOCX template as base64 PDF
- *     description: Same as /render but returns base64-encoded PDF in JSON response.
+ *     description: |
+ *       Same as /render but returns base64-encoded PDF in JSON response.
+ *       Alternatively, convert HTML or a URL to PDF.
  *     tags: [Render]
  *     requestBody:
  *       required: true
@@ -151,6 +153,32 @@ router.post('/render', checkApiKey, multiUpload, renderPdf);
  *               data:
  *                 type: string
  *                 description: JSON string of variable values
+ *               signature:
+ *                 type: string
+ *                 format: binary
+ *                 description: Signature image
+ *               logo:
+ *                 type: string
+ *                 format: binary
+ *                 description: Logo image
+ *               image1:
+ *                 type: string
+ *                 format: binary
+ *                 description: Additional image 1
+ *               image2:
+ *                 type: string
+ *                 format: binary
+ *                 description: Additional image 2
+ *               image3:
+ *                 type: string
+ *                 format: binary
+ *                 description: Additional image 3
+ *               html:
+ *                 type: string
+ *                 description: HTML string to convert (skips template)
+ *               url:
+ *                 type: string
+ *                 description: URL to convert to PDF (skips template)
  *     responses:
  *       200:
  *         description: Base64 encoded PDF

@@ -3,10 +3,12 @@ import axios from 'axios';
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 export interface RenderOptions {
-  template: File;
-  data: Record<string, unknown>;
+  template?: File;
+  data?: Record<string, unknown>;
   images?: Record<string, File>;
   apiKey?: string;
+  html?: string;
+  url?: string;
 }
 
 export interface AnalyzeResult {
@@ -20,12 +22,19 @@ function buildHeaders(apiKey?: string): Record<string, string> {
 }
 
 export async function renderToPdf(options: RenderOptions): Promise<Blob> {
-  const { template, data, images = {}, apiKey } = options;
+  const { template, data, images = {}, apiKey, html, url } = options;
   const form = new FormData();
-  form.append('template', template);
-  form.append('data', JSON.stringify(data));
-  for (const [key, file] of Object.entries(images)) {
-    form.append(key, file);
+
+  if (html) {
+    form.append('html', html);
+  } else if (url) {
+    form.append('url', url);
+  } else {
+    if (template) form.append('template', template);
+    if (data) form.append('data', JSON.stringify(data));
+    for (const [key, file] of Object.entries(images)) {
+      form.append(key, file);
+    }
   }
 
   const response = await axios.post(`${API_BASE}/render`, form, {
@@ -37,12 +46,19 @@ export async function renderToPdf(options: RenderOptions): Promise<Blob> {
 }
 
 export async function previewPdf(options: RenderOptions): Promise<string> {
-  const { template, data, images = {}, apiKey } = options;
+  const { template, data, images = {}, apiKey, html, url } = options;
   const form = new FormData();
-  form.append('template', template);
-  form.append('data', JSON.stringify(data));
-  for (const [key, file] of Object.entries(images)) {
-    form.append(key, file);
+
+  if (html) {
+    form.append('html', html);
+  } else if (url) {
+    form.append('url', url);
+  } else {
+    if (template) form.append('template', template);
+    if (data) form.append('data', JSON.stringify(data));
+    for (const [key, file] of Object.entries(images)) {
+      form.append(key, file);
+    }
   }
 
   const response = await axios.post(`${API_BASE}/preview`, form, {
