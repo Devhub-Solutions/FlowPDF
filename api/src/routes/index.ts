@@ -11,17 +11,11 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
     fileSize: 50 * 1024 * 1024, // 50MB
+    files: 20,
   },
 });
 
-const multiUpload = upload.fields([
-  { name: 'template', maxCount: 1 },
-  { name: 'signature', maxCount: 1 },
-  { name: 'logo', maxCount: 1 },
-  { name: 'image1', maxCount: 1 },
-  { name: 'image2', maxCount: 1 },
-  { name: 'image3', maxCount: 1 },
-]);
+const multiUpload = upload.any();
 
 const MAX_COMBINE_FILES = 20;
 const combineUpload = upload.array('files', MAX_COMBINE_FILES);
@@ -85,32 +79,16 @@ router.get('/health', async (_req, res) => {
  *                 type: string
  *                 description: JSON string of variable values
  *                 example: '{"name":"Nguyen Van A","amount":"5,000,000 VND"}'
- *               signature:
- *                 type: string
- *                 format: binary
- *                 description: Signature image
- *               logo:
- *                 type: string
- *                 format: binary
- *                 description: Logo image
- *               image1:
- *                 type: string
- *                 format: binary
- *                 description: Additional image 1
- *               image2:
- *                 type: string
- *                 format: binary
- *                 description: Additional image 2
- *               image3:
- *                 type: string
- *                 format: binary
- *                 description: Additional image 3
  *               html:
  *                 type: string
  *                 description: HTML string to convert (skips template)
  *               url:
  *                 type: string
  *                 description: URL to convert to PDF (skips template)
+ *             additionalProperties:
+ *               type: string
+ *               format: binary
+ *               description: Image files matching template placeholders (e.g. signature, logo, image1, etc.)
  *     responses:
  *       200:
  *         description: PDF binary
@@ -153,32 +131,16 @@ router.post('/render', checkApiKey, multiUpload, renderPdf);
  *               data:
  *                 type: string
  *                 description: JSON string of variable values
- *               signature:
- *                 type: string
- *                 format: binary
- *                 description: Signature image
- *               logo:
- *                 type: string
- *                 format: binary
- *                 description: Logo image
- *               image1:
- *                 type: string
- *                 format: binary
- *                 description: Additional image 1
- *               image2:
- *                 type: string
- *                 format: binary
- *                 description: Additional image 2
- *               image3:
- *                 type: string
- *                 format: binary
- *                 description: Additional image 3
  *               html:
  *                 type: string
  *                 description: HTML string to convert (skips template)
  *               url:
  *                 type: string
  *                 description: URL to convert to PDF (skips template)
+ *             additionalProperties:
+ *               type: string
+ *               format: binary
+ *               description: Image files matching template placeholders (e.g. signature, logo, image1, etc.)
  *     responses:
  *       200:
  *         description: Base64 encoded PDF

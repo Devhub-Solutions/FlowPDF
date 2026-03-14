@@ -18,9 +18,22 @@ type MulterRequest = Request & {
   } | MulterFile[];
 };
 
+function groupFilesByField(files: MulterRequest['files']): Record<string, MulterFile[]> {
+  if (!files) return {};
+  if (Array.isArray(files)) {
+    const grouped: Record<string, MulterFile[]> = {};
+    for (const file of files) {
+      if (!grouped[file.fieldname]) grouped[file.fieldname] = [];
+      grouped[file.fieldname].push(file);
+    }
+    return grouped;
+  }
+  return files;
+}
+
 export async function renderPdf(req: MulterRequest, res: Response): Promise<void> {
   try {
-    const files = req.files as { [fieldname: string]: MulterFile[] };
+    const files = groupFilesByField(req.files);
     
     // Handle HTML render
     if (req.body.html) {
@@ -88,7 +101,7 @@ export async function renderPdf(req: MulterRequest, res: Response): Promise<void
 
 export async function previewPdf(req: MulterRequest, res: Response): Promise<void> {
   try {
-    const files = req.files as { [fieldname: string]: MulterFile[] };
+    const files = groupFilesByField(req.files);
 
     // Handle HTML preview
     if (req.body.html) {
@@ -160,7 +173,7 @@ export async function previewPdf(req: MulterRequest, res: Response): Promise<voi
 
 export async function analyzePlaceholders(req: MulterRequest, res: Response): Promise<void> {
   try {
-    const files = req.files as { [fieldname: string]: MulterFile[] };
+    const files = groupFilesByField(req.files);
     const templateFiles = files?.['template'];
 
     if (!templateFiles || templateFiles.length === 0) {
