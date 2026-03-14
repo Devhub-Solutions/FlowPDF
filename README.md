@@ -80,13 +80,13 @@ Render a DOCX template to PDF (binary response).
 |---|---|---|---|
 | `template` | file (.docx) | ✅ | DOCX template file |
 | `data` | JSON string | ✅ | Variable values |
-| `signature` | file (image) | ❌ | Signature image |
-| `logo` | file (image) | ❌ | Logo image |
-| `image1` | file (image) | ❌ | Additional image 1 |
-| `image2` | file (image) | ❌ | Additional image 2 |
-| `image3` | file (image) | ❌ | Additional image 3 |
-| `html` | string | ❌ | HTML string (skips template) |
-| `url` | string | ❌ | URL to convert to PDF |
+| `signature` | file (image) | ✅ | Signature image |
+| `logo` | file (image) | ✅ | Logo image |
+| `image1` | file (image) | ✅ | Additional image 1 |
+| `image2` | file (image) | ✅ | Additional image 2 |
+| `image3` | file (image) | ✅ | Additional image 3 |
+| `html` | string | ✅ | HTML string (skips template) |
+| `url` | string | ✅ | URL to convert to PDF |
 
 **Response**: `application/pdf` binary
 
