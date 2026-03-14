@@ -5,6 +5,7 @@ import PizZip from 'pizzip';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Tab = 'render' | 'builder';
+type RenderMode = 'template' | 'html' | 'url';
 type BuilderBlock = { id: string; type: 'text' | 'field' | 'image' | 'heading' | 'divider' | 'table'; content: string; label?: string };
 
 // ─── Tiny ID ──────────────────────────────────────────────────────────────────
@@ -38,6 +39,7 @@ const StepBadge = ({ n, done }: { n: number; done: boolean }) => (
 
 // ─── RENDER TAB ───────────────────────────────────────────────────────────────
 function RenderTab() {
+  const [renderMode, setRenderMode] = useState<RenderMode>('template');
   const [template, setTemplate] = useState<File | null>(null);
   const [placeholders, setPlaceholders] = useState<string[]>([]);
   const [jsonData, setJsonData] = useState('{\n  "name": "Nguyen Van A",\n  "company": "FlowPDF Inc.",\n  "date": "2025-01-15",\n  "amount": "5,000,000 VND"\n}');
@@ -47,6 +49,8 @@ function RenderTab() {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
+  const [htmlInput, setHtmlInput] = useState('');
+  const [urlInput, setUrlInput] = useState('');
 
   const isJsonValid = (() => { try { JSON.parse(jsonData); return true; } catch { return false; } })();
 
@@ -66,11 +70,18 @@ function RenderTab() {
   };
 
   const handleGenerate = async () => {
-    if (!template) return;
     setStatus('loading'); setError(null); setPdfUrl(null);
     try {
-      const data = JSON.parse(jsonData);
-      const blob = await renderToPdf({ template, data, images, apiKey });
+      let blob: Blob;
+      if (renderMode === 'html') {
+        blob = await renderToPdf({ html: htmlInput, apiKey });
+      } else if (renderMode === 'url') {
+        blob = await renderToPdf({ url: urlInput, apiKey });
+      } else {
+        if (!template) return;
+        const data = JSON.parse(jsonData);
+        blob = await renderToPdf({ template, data, images, apiKey });
+      }
       setPdfUrl(URL.createObjectURL(blob));
       setStatus('success');
     } catch (e) {
@@ -87,6 +98,23 @@ function RenderTab() {
 
       {/* COL 1 — Template + Config */}
       <div className="flex flex-col gap-4">
+        {/* Render Mode Selector */}
+        <div className="card">
+          <div className="card-header">
+            <span className="card-title">Source</span>
+          </div>
+          <div className="flex gap-1.5">
+            {([['template', 'DOCX'], ['html', 'HTML'], ['url', 'URL']] as const).map(([mode, label]) => (
+              <button key={mode} onClick={() => { setRenderMode(mode); setPdfUrl(null); setStatus('idle'); setError(null); }}
+                className={`flex-1 py-2 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all
+                  ${renderMode === mode ? 'bg-lime-400 text-zinc-950' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'}`}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {renderMode === 'template' && (<>
         {/* Template Upload */}
         <div className="card">
           <div className="card-header">
@@ -149,7 +177,10 @@ function RenderTab() {
             <span className="text-xs text-zinc-600 ml-auto">optional</span>
           </div>
           <div className="flex flex-col gap-2">
-            {['signature', 'logo'].map(field => (
+            {(imgFields.length > 0
+              ? imgFields.map(p => p.replace(/^%/, ''))
+              : ['signature', 'logo', 'image1', 'image2', 'image3']
+            ).map(field => (
               <label key={field} className="cursor-pointer">
                 <div className={`flex items-center gap-3 p-2.5 rounded-xl border transition-all
                   ${images[field] ? 'border-lime-400/30 bg-lime-400/5' : 'border-zinc-800 bg-zinc-900/50 hover:border-zinc-700'}`}>
@@ -167,10 +198,45 @@ function RenderTab() {
             ))}
           </div>
         </div>
-      </div>
+        </>)}
 
-      {/* COL 2 — JSON Editor */}
+        {renderMode === 'html' && (
+          <div className="card flex-1 flex flex-col">
+            <div className="card-header">
+              <StepBadge n={1} done={!!htmlInput.trim()} />
+              <span className="card-title">HTML Content</span>
+            </div>
+            <textarea
+              value={htmlInput}
+              onChange={e => setHtmlInput(e.target.value)}
+              spellCheck={false}
+              className="flex-1 w-full p-4 bg-zinc-950 rounded-xl text-xs font-mono leading-relaxed text-orange-300
+                border border-zinc-800 focus:border-zinc-600 focus:outline-none resize-none transition-colors min-h-[280px]"
+              placeholder='<h1>Hello World</h1><p>Your HTML here...</p>'
+            />
+          </div>
+        )}
+
+        {renderMode === 'url' && (
+          <div className="card">
+            <div className="card-header">
+              <StepBadge n={1} done={!!urlInput.trim()} />
+              <span className="card-title">URL</span>
+            </div>
+            <input
+              type="url"
+              value={urlInput}
+              onChange={e => setUrlInput(e.target.value)}
+              className="input font-mono text-sm"
+              placeholder="https://example.com"
+            />
+            <p className="text-xs text-zinc-600 mt-2">Enter a URL to convert the web page to PDF</p>
+          </div>
+        )}
+      </div>
+      {/* COL 2 — JSON Editor / Generate */}
       <div className="flex flex-col gap-4">
+        {renderMode === 'template' && (
         <div className="card flex-1 flex flex-col">
           <div className="card-header">
             <StepBadge n={4} done={isJsonValid && !!template} />
@@ -189,13 +255,25 @@ function RenderTab() {
             placeholder='{ "key": "value" }'
           />
         </div>
+        )}
+
+        {renderMode !== 'template' && <div className="flex-1" />}
 
         {/* Generate Button */}
         <button
           onClick={handleGenerate}
-          disabled={!template || !isJsonValid || status === 'loading'}
+          disabled={
+            (renderMode === 'template' && (!template || !isJsonValid)) ||
+            (renderMode === 'html' && !htmlInput.trim()) ||
+            (renderMode === 'url' && !urlInput.trim()) ||
+            status === 'loading'
+          }
           className={`h-13 rounded-2xl font-mono font-bold text-sm tracking-widest uppercase flex items-center justify-center gap-2 transition-all
-            ${template && isJsonValid && status !== 'loading'
+            ${(
+              (renderMode === 'template' && template && isJsonValid) ||
+              (renderMode === 'html' && htmlInput.trim()) ||
+              (renderMode === 'url' && urlInput.trim())
+            ) && status !== 'loading'
               ? 'bg-lime-400 text-zinc-950 hover:bg-lime-300 shadow-[0_0_30px_rgba(163,230,53,0.25)] active:scale-[0.98] cursor-pointer'
               : 'bg-zinc-800 text-zinc-600 cursor-not-allowed'}`}
         >
@@ -209,13 +287,31 @@ function RenderTab() {
         )}
 
         {/* Curl snippet */}
-        {template && (
+        {renderMode === 'template' && template && (
           <div className="card">
             <p className="text-xs font-mono text-zinc-600 mb-2 uppercase tracking-wider">cURL</p>
             <pre className="text-xs font-mono text-zinc-400 overflow-x-auto whitespace-pre-wrap break-all leading-relaxed">{`curl -X POST http://localhost:8080/api/render \\
   -H "Authorization: Bearer ${apiKey}" \\
   -F "template=@${template.name}" \\
   -F 'data=${jsonData.replace(/\s+/g,' ')}' \\
+  --output doc.pdf`}</pre>
+          </div>
+        )}
+        {renderMode === 'html' && htmlInput.trim() && (
+          <div className="card">
+            <p className="text-xs font-mono text-zinc-600 mb-2 uppercase tracking-wider">cURL</p>
+            <pre className="text-xs font-mono text-zinc-400 overflow-x-auto whitespace-pre-wrap break-all leading-relaxed">{`curl -X POST http://localhost:8080/api/render \\
+  -H "Authorization: Bearer ${apiKey}" \\
+  -F 'html=${htmlInput.replace(/'/g, "\\'")}' \\
+  --output doc.pdf`}</pre>
+          </div>
+        )}
+        {renderMode === 'url' && urlInput.trim() && (
+          <div className="card">
+            <p className="text-xs font-mono text-zinc-600 mb-2 uppercase tracking-wider">cURL</p>
+            <pre className="text-xs font-mono text-zinc-400 overflow-x-auto whitespace-pre-wrap break-all leading-relaxed">{`curl -X POST http://localhost:8080/api/render \\
+  -H "Authorization: Bearer ${apiKey}" \\
+  -F 'url=${urlInput}' \\
   --output doc.pdf`}</pre>
           </div>
         )}

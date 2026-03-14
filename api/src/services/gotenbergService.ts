@@ -86,17 +86,32 @@ export async function convertHtmlToPdf(html: string): Promise<Buffer> {
 }
 
 export async function convertUrlToPdf(url: string): Promise<Buffer> {
-  const response = await axios.post(
-    `${GOTENBERG_URL}/forms/chromium/convert/url`,
-    { url },
-    {
-      headers: { 'Content-Type': 'application/json' },
-      responseType: 'arraybuffer',
-      timeout: 60000,
-    }
-  );
+  let lastError: Error | null = null;
 
-  return Buffer.from(response.data);
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const form = new FormData();
+      form.append('url', url);
+
+      const response = await axios.post(
+        `${GOTENBERG_URL}/forms/chromium/convert/url`,
+        form,
+        {
+          headers: { ...form.getHeaders() },
+          responseType: 'arraybuffer',
+          timeout: 60000,
+        }
+      );
+
+      return Buffer.from(response.data);
+    } catch (error) {
+      lastError = error as Error;
+      logger.warn(`URL convert attempt ${attempt} failed`);
+      if (attempt < MAX_RETRIES) await sleep(RETRY_DELAY_MS * attempt);
+    }
+  }
+
+  throw new Error(`URL conversion failed: ${lastError?.message}`);
 }
 
 export async function convertFileToPdf(fileBuffer: Buffer, filename: string, mimetype: string): Promise<Buffer> {
