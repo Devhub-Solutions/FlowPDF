@@ -302,7 +302,7 @@ function RenderTab() {
             <p className="text-xs font-mono text-zinc-600 mb-2 uppercase tracking-wider">cURL</p>
             <pre className="text-xs font-mono text-zinc-400 overflow-x-auto whitespace-pre-wrap break-all leading-relaxed">{`curl -X POST http://localhost:8080/api/render \\
   -H "Authorization: Bearer ${apiKey}" \\
-  -F 'html=${htmlInput.replace(/'/g, "\\'")}' \\
+  -F 'html=${htmlInput.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}' \\
   --output doc.pdf`}</pre>
           </div>
         )}
