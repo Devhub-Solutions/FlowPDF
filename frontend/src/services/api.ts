@@ -82,6 +82,27 @@ export async function analyzePlaceholders(
   return response.data as AnalyzeResult;
 }
 
+export async function combinePdfs(
+  files: File[],
+  order: string[] | null,
+  apiKey?: string
+): Promise<Blob> {
+  const form = new FormData();
+  for (const file of files) {
+    form.append('files', file);
+  }
+  if (order) {
+    form.append('order', JSON.stringify(order));
+  }
+
+  const response = await axios.post(`${API_BASE}/combine`, form, {
+    headers: { ...buildHeaders(apiKey) },
+    responseType: 'blob',
+  });
+
+  return new Blob([response.data], { type: 'application/pdf' });
+}
+
 export async function checkHealth(): Promise<{ status: string; gotenberg: string }> {
   const response = await axios.get(`${API_BASE}/health`);
   return response.data;
