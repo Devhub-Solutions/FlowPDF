@@ -189,7 +189,7 @@ function RenderTab() {
             <span className="text-xs text-zinc-600 ml-auto">optional</span>
           </div>
           {imgFields.length === 0 && template && (
-            <p className="text-xs text-zinc-600 mb-2">Use <code className="text-lime-400 font-mono">{'{%signature}'}</code> in template to embed images</p>
+            <p className="text-xs text-zinc-600 mb-2">Use <code className="text-lime-400 font-mono">{'{%signature}'}</code>, <code className="text-lime-400 font-mono">{'{%logo}'}</code>, etc. in template to embed images</p>
           )}
           <div className="flex flex-col gap-2">
             {(imgFields.length > 0
@@ -307,16 +307,19 @@ function RenderTab() {
         )}
 
         {/* Curl snippet */}
-        {renderMode === 'template' && template && (
+        {renderMode === 'template' && template && (() => {
+          const imgFlags = Object.entries(images).map(([k, f]) => `\n  -F "${k}=@${f.name}" \\`).join('');
+          return (
           <div className="card">
             <p className="text-xs font-mono text-zinc-600 mb-2 uppercase tracking-wider">cURL</p>
             <pre className="text-xs font-mono text-zinc-400 overflow-x-auto whitespace-pre-wrap break-all leading-relaxed">{`curl -X POST http://localhost:8080/api/render \\
   -H "Authorization: Bearer ${apiKey}" \\
   -F "template=@${template.name}" \\
-  -F 'data=${jsonData.replace(/\s+/g,' ')}' \\${Object.entries(images).map(([k, f]) => `\n  -F "${k}=@${f.name}" \\`).join('')}
+  -F 'data=${jsonData.replace(/\s+/g,' ')}' \\${imgFlags}
   --output doc.pdf`}</pre>
           </div>
-        )}
+          );
+        })()}
         {renderMode === 'html' && htmlInput.trim() && (
           <div className="card">
             <p className="text-xs font-mono text-zinc-600 mb-2 uppercase tracking-wider">cURL</p>
