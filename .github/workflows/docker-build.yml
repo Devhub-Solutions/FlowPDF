@@ -58,10 +58,23 @@ jobs:
         if: github.event_name != 'pull_request'
         env:
           IMAGE: ${{ env.IMAGE }}
+          # GH_PAT is passed as an env var so the script can detect when the
+          # secret is absent. actions/github-script silently falls back to
+          # GITHUB_TOKEN when github-token is empty, which lacks the org-level
+          # packages permission required by updatePackageForOrg.
+          GH_PAT: ${{ secrets.GH_PAT }}
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.GH_PAT }}
           script: |
+            if (!process.env.GH_PAT) {
+              core.setFailed(
+                'GH_PAT secret is not set. Create a classic Personal Access Token with ' +
+                'write:packages scope and add it as the GH_PAT repository/org secret. ' +
+                'See the CI/CD section in README.md for details.'
+              );
+              return;
+            }
             const image = process.env.IMAGE;
             const packageName = image.split('/').pop().toLowerCase();
             const owner = context.repo.owner;
@@ -83,6 +96,8 @@ jobs:
               }
               console.log(`Package '${packageName}' visibility set to public.`);
             } catch (error) {
-              console.log(`Could not set package visibility: ${error.message}`);
-              console.log('Please set the package visibility to public manually via the GitHub UI.');
+              core.setFailed(
+                `Failed to set package '${packageName}' visibility to public: ${error.message}. ` +
+                'Ensure the GH_PAT token has write:packages scope and belongs to an org admin.'
+              );
             }

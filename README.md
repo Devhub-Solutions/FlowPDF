@@ -256,6 +256,22 @@ Docker images are automatically built and pushed to GitHub Container Registry on
 **Image:**
 - `ghcr.io/devhub-solutions/flowpdf`
 
+### Required Secret: `GH_PAT`
+
+The workflow automatically sets the published container package to **public** after each push. This requires a secret named `GH_PAT` because the default `GITHUB_TOKEN` lacks the API permission to change organization package visibility.
+
+**Setup (one-time, performed by an org admin):**
+
+1. Go to **GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic)**
+2. Click **Generate new token (classic)**
+3. Give it a descriptive name (e.g. `flowpdf-packages-visibility`)
+4. Select the scope: **`write:packages`**
+5. Click **Generate token** and copy the value
+6. Go to the repository → **Settings → Secrets and variables → Actions**
+7. Click **New repository secret**, name it `GH_PAT`, paste the token value, and save
+
+Once `GH_PAT` is set, every push to `main` or a version tag will push the image **and** ensure it remains publicly accessible at `ghcr.io/devhub-solutions/flowpdf`.
+
 ---
 
 ## Development
