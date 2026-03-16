@@ -4,19 +4,17 @@ FROM node:20-alpine AS frontend-builder
 WORKDIR /app/frontend
 COPY frontend/package*.json ./
 RUN npm ci
-COPY frontend/index.html ./
-COPY frontend/src ./src
-COPY frontend/tsconfig.json frontend/tsconfig.node.json ./
+COPY frontend/index.html frontend/tsconfig.json frontend/tsconfig.node.json ./
 COPY frontend/vite.config.ts frontend/postcss.config.js frontend/tailwind.config.js ./
+COPY frontend/src ./src
 RUN npm run build
 
 # Stage 2: Build API
 FROM node:20-alpine AS api-builder
 
 WORKDIR /app/api
-COPY api/package*.json ./
+COPY api/package*.json api/tsconfig.json ./
 RUN npm ci
-COPY api/tsconfig.json ./
 COPY api/src ./src
 RUN npm run build
 
