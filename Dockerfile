@@ -38,6 +38,10 @@ COPY --from=frontend-builder /app/frontend/dist ./public
 ENV NODE_ENV=production
 ENV PORT=8080
 
+LABEL org.opencontainers.image.source=https://github.com/Devhub-Solutions/FlowPDF
+LABEL org.opencontainers.image.description="FlowPDF - DOCX template to PDF rendering service"
+LABEL org.opencontainers.image.licenses=MIT
+
 EXPOSE 8080
 
 CMD ["node", "dist/index.js"]
