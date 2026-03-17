@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import sharp from 'sharp';
 import { renderDocx, extractPlaceholders } from '../services/docxService';
 import { convertDocxToPdf, convertHtmlToPdf, convertUrlToPdf } from '../services/gotenbergService';
 import { logger } from '../utils/logger';
@@ -18,6 +19,79 @@ type MulterRequest = Request & {
   } | MulterFile[];
 };
 
+interface ImageSizeOption {
+  width: number;
+  height: number;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function parsePositiveNumber(value: unknown): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+    return value;
+  }
+
+  if (typeof value === 'string' && value.trim() !== '') {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed) && parsed > 0) {
+      return parsed;
+    }
+  }
+
+  return undefined;
+}
+
+function extractImageSizeOptions(data: Record<string, unknown>): {
+  renderData: Record<string, unknown>;
+  imageSizes: Record<string, ImageSizeOption>;
+} {
+  const renderData = { ...data };
+  const imageSizes: Record<string, ImageSizeOption> = {};
+  const imageOptionSources = ['imageOptions', '_imageOptions'];
+
+  for (const sourceKey of imageOptionSources) {
+    const sourceValue = renderData[sourceKey];
+    if (!isRecord(sourceValue)) {
+      delete renderData[sourceKey];
+      continue;
+    }
+
+    for (const [imageName, rawConfig] of Object.entries(sourceValue)) {
+      if (!isRecord(rawConfig)) {
+        throw new Error(
+          `Invalid image size config for "${imageName}". Use an object like {"width":180,"height":60}.`
+        );
+      }
+
+      const width =
+        parsePositiveNumber(rawConfig.width) ??
+        parsePositiveNumber(rawConfig.widthPx) ??
+        parsePositiveNumber(rawConfig.w);
+      const height =
+        parsePositiveNumber(rawConfig.height) ??
+        parsePositiveNumber(rawConfig.heightPx) ??
+        parsePositiveNumber(rawConfig.h);
+
+      if (!width && !height) {
+        throw new Error(
+          `Invalid image size config for "${imageName}". Provide width and/or height as positive numbers.`
+        );
+      }
+
+      imageSizes[imageName] = {
+        width: width ?? height ?? 150,
+        height: height ?? width ?? 100,
+      };
+    }
+
+    delete renderData[sourceKey];
+  }
+
+  return { renderData, imageSizes };
+}
+
 function groupFilesByField(files: MulterRequest['files']): Record<string, MulterFile[]> {
   if (!files) return {};
   if (Array.isArray(files)) {
@@ -29,6 +103,12 @@ function groupFilesByField(files: MulterRequest['files']): Record<string, Multer
     return grouped;
   }
   return files;
+}
+
+async function normalizeTemplateImage(file: MulterFile): Promise<Buffer> {
+  return sharp(file.buffer)
+    .png()
+    .toBuffer();
 }
 
 export async function renderPdf(req: MulterRequest, res: Response): Promise<void> {
@@ -72,18 +152,39 @@ export async function renderPdf(req: MulterRequest, res: Response): Promise<void
       }
     }
 
+    const placeholders = new Set(extractPlaceholders(templateBuffer));
+    const { renderData, imageSizes } = extractImageSizeOptions(data);
+
     // Collect images
     const images: Record<string, Buffer> = {};
     if (files) {
       for (const [key, fileArray] of Object.entries(files)) {
         if (key !== 'template' && fileArray.length > 0) {
-          images[key] = fileArray[0].buffer;
-          logger.info(`Received image: ${key}`);
+          const file = fileArray[0];
+
+          if (!placeholders.has(`%${key}`)) {
+            res.status(400).json({
+              error: `Image field "${key}" was uploaded but template is missing image placeholder {%${key}}.`,
+            });
+            return;
+          }
+
+          try {
+            images[key] = await normalizeTemplateImage(file);
+          } catch (error) {
+            logger.warn(`Failed to normalize image ${key}: ${(error as Error).message}`);
+            res.status(400).json({
+              error: `Invalid or unsupported image data for field "${key}". Upload any image format supported by Sharp.`,
+            });
+            return;
+          }
+          renderData[key] = data[key] ?? file.originalname ?? key;
+          logger.info(`Received image: ${key} (${file.mimetype})`);
         }
       }
     }
 
-    const docxBuffer = renderDocx({ templateBuffer, data, images });
+    const docxBuffer = renderDocx({ templateBuffer, data: renderData, images, imageSizes });
     const pdfBuffer = await convertDocxToPdf(docxBuffer);
 
     res.setHeader('Content-Type', 'application/pdf');
@@ -145,18 +246,37 @@ export async function previewPdf(req: MulterRequest, res: Response): Promise<voi
       }
     }
 
+    const placeholders = new Set(extractPlaceholders(templateBuffer));
+    const { renderData, imageSizes } = extractImageSizeOptions(data);
+
     // Collect images
     const images: Record<string, Buffer> = {};
     if (files) {
       for (const [key, fileArray] of Object.entries(files)) {
         if (key !== 'template' && fileArray.length > 0) {
-          images[key] = fileArray[0].buffer;
-          logger.info(`Preview received image: ${key}`);
+          const file = fileArray[0];
+          if (!placeholders.has(`%${key}`)) {
+            res.status(400).json({
+              error: `Image field "${key}" was uploaded but template is missing image placeholder {%${key}}.`,
+            });
+            return;
+          }
+
+          try {
+            images[key] = await normalizeTemplateImage(file);
+          } catch (error) {
+            res.status(400).json({
+              error: `Invalid or unsupported image data for field "${key}". Upload any image format supported by Sharp.`,
+            });
+            return;
+          }
+          renderData[key] = data[key] ?? file.originalname ?? key;
+          logger.info(`Preview received image: ${key} (${file.mimetype})`);
         }
       }
     }
 
-    const docxBuffer = renderDocx({ templateBuffer, data, images });
+    const docxBuffer = renderDocx({ templateBuffer, data: renderData, images, imageSizes });
     const pdfBuffer = await convertDocxToPdf(docxBuffer);
 
     res.json({

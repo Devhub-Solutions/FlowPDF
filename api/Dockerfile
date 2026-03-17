@@ -1,4 +1,4 @@
-FROM node:20-alpine AS builder
+FROM mirror.gcr.io/library/node:18-alpine AS builder
 
 WORKDIR /app
 COPY package*.json ./
@@ -7,7 +7,7 @@ COPY tsconfig.json ./
 COPY src ./src
 RUN npm run build
 
-FROM node:20-alpine AS runner
+FROM mirror.gcr.io/library/node:18-alpine AS runner
 
 WORKDIR /app
 COPY package*.json ./

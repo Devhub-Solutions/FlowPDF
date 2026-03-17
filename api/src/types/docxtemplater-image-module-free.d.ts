@@ -1,4 +1,4 @@
-declare module 'docxtemplater-image-module-free' {
+declare module '@slosarek/docxtemplater-image-module-free' {
   interface ImageModuleOptions {
     centered?: boolean;
     fileType?: string;

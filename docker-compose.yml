@@ -25,8 +25,8 @@ services:
   gotenberg:
     image: gotenberg/gotenberg:8
     container_name: flowpdf-gotenberg
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     command:
       - "gotenberg"
       - "--chromium-disable-routes=false"

@@ -14,7 +14,7 @@ React UI  →  FlowPDF API  →  Docxtemplater  →  DOCX  →  Gotenberg  →  
 | Service | Port | Description |
 |---|---|---|
 | `flowpdf` | 8080 | Unified app (API + UI) |
-| `gotenberg` | 3000 | LibreOffice-based PDF converter |
+| `gotenberg` | internal only | LibreOffice/Chromium PDF converter reachable only inside Docker network |
 
 ---
 
@@ -30,7 +30,8 @@ docker compose up --build
 - **UI**: http://localhost:8080  
 - **API**: http://localhost:8080/api  
 - **API Docs (Swagger)**: http://localhost:8080/api-docs  
-- **Gotenberg**: http://localhost:3000
+
+`gotenberg` is intentionally not published to the host. The `flowpdf` service talks to it internally at `http://gotenberg:3000`.
 
 ### Pull Pre-built Image
 
@@ -79,14 +80,14 @@ Render a DOCX template to PDF (binary response).
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `template` | file (.docx) | ✅ | DOCX template file |
-| `data` | JSON string | ✅ | Variable values |
-| `signature` | file (image) | ✅ | Signature image |
-| `logo` | file (image) | ✅ | Logo image |
-| `image1` | file (image) | ✅ | Additional image 1 |
-| `image2` | file (image) | ✅ | Additional image 2 |
-| `image3` | file (image) | ✅ | Additional image 3 |
-| `html` | string | ✅ | HTML string (skips template) |
-| `url` | string | ✅ | URL to convert to PDF |
+| `data` | JSON string | ❌ | Variable values and optional image size config |
+| `signature` | file (image) | ❌ | Image for `{%signature}` |
+| `logo` | file (image) | ❌ | Image for `{%logo}` |
+| `<any-image-key>` | file (image) | ❌ | Image for matching `{%<any-image-key>}` placeholder |
+| `html` | string | ❌ | HTML string (skips template) |
+| `url` | string | ❌ | URL to convert to PDF |
+
+All uploaded images are normalized to PNG before DOCX injection. In practice, any format supported by `sharp` can be uploaded.
 
 **Response**: `application/pdf` binary
 
@@ -95,9 +96,27 @@ Render a DOCX template to PDF (binary response).
 curl -X POST http://localhost:8080/api/render \
   -H "Authorization: Bearer flowpdf_dev_key" \
   -F "template=@contract.docx" \
-  -F 'data={"name":"Nguyen Van A","amount":"5,000,000 VND","date":"2025-01-15"}' \
+  -F 'data={"name":"Nguyen Van A","amount":"5,000,000 VND","date":"2025-01-15","imageOptions":{"signature":{"width":180,"height":60},"logo":{"w":140,"h":70}}}' \
+  -F "signature=@signature.gif" \
+  -F "logo=@brand.webp" \
   --output document.pdf
 ```
+
+**Image size config in `data`:**
+```json
+{
+  "imageOptions": {
+    "signature": { "width": 180, "height": 60 },
+    "logo": { "w": 140, "h": 70 }
+  }
+}
+```
+
+Also supported:
+- `_imageOptions` as an alternative key
+- `width`, `height`
+- `widthPx`, `heightPx`
+- `w`, `h`
 
 ---
 
@@ -113,6 +132,8 @@ Same as `/render` but returns base64-encoded PDF.
   "size": 48392
 }
 ```
+
+`/api/preview` supports the same image upload behavior and `imageOptions` / `_imageOptions` JSON config as `/api/render`.
 
 ---
 
@@ -204,6 +225,11 @@ Templates use [Docxtemplater](https://docxtemplater.com/) syntax:
 {?condition}...{/} → conditional
 ```
 
+Notes:
+- Image placeholders should use the form `{%imageKey}`.
+- The uploaded multipart field name must match the image key exactly.
+- Image placeholders work best when placed in their own paragraph or table cell.
+
 ---
 
 ## Environment Variables
@@ -214,7 +240,7 @@ Templates use [Docxtemplater](https://docxtemplater.com/) syntax:
 |---|---|---|
 | `PORT` | `8080` | Server port |
 | `FLOWPDF_API_KEY` | *(none)* | Auth key (skip if unset) |
-| `GOTENBERG_URL` | `http://localhost:3000` | Gotenberg endpoint |
+| `GOTENBERG_URL` | `http://gotenberg:3000` | Internal Docker Gotenberg endpoint |
 | `LOG_LEVEL` | `info` | winston log level |
 
 ---
@@ -284,6 +310,12 @@ cd api && npm install && npm run dev
 cd frontend && npm install && npm run dev
 ```
 
+If you change frontend dependencies, update the lockfile before rebuilding Docker:
+
+```bash
+cd frontend && npm install
+```
+
 ---
 
 ## Project Structure
@@ -312,8 +344,19 @@ flowpdf/
 │
 ├── frontend/
 │   ├── src/
-│   │   ├── App.tsx                 # Main UI
+│   │   ├── App.tsx                 # Route entry
+│   │   ├── components/
+│   │   │   ├── icons/Ico.tsx
+│   │   │   ├── layout/AppLayout.tsx
+│   │   │   └── ui/StepBadge.tsx
+│   │   ├── pages/
+│   │   │   ├── LandingPage.tsx
+│   │   │   ├── RenderPage.tsx
+│   │   │   ├── MergePage.tsx
+│   │   │   └── BuilderPage.tsx
 │   │   ├── services/api.ts
+│   │   ├── types/index.ts
+│   │   ├── utils/uid.ts
 │   │   └── main.tsx
 │   ├── Dockerfile                   # Standalone frontend image
 │   ├── nginx.conf

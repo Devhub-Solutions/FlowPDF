@@ -10,6 +10,29 @@ async function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function getAxiosErrorDetails(error: AxiosError): string {
+  const status = error.response?.status;
+  const payload = error.response?.data;
+
+  if (!status) {
+    return error.message;
+  }
+
+  if (Buffer.isBuffer(payload)) {
+    return `status=${status}, body=${payload.toString('utf-8')}`;
+  }
+
+  if (typeof payload === 'string') {
+    return `status=${status}, body=${payload}`;
+  }
+
+  if (payload && typeof payload === 'object') {
+    return `status=${status}, body=${JSON.stringify(payload)}`;
+  }
+
+  return `status=${status}, message=${error.message}`;
+}
+
 export async function convertDocxToPdf(docxBuffer: Buffer): Promise<Buffer> {
   let lastError: Error | null = null;
 
@@ -38,10 +61,11 @@ export async function convertDocxToPdf(docxBuffer: Buffer): Promise<Buffer> {
       logger.info('Gotenberg conversion successful');
       return Buffer.from(response.data);
     } catch (error) {
-      lastError = error as Error;
       const axiosError = error as AxiosError;
+      const details = getAxiosErrorDetails(axiosError);
+      lastError = new Error(details);
       logger.warn(
-        `Gotenberg attempt ${attempt} failed: ${axiosError.message}`
+        `Gotenberg attempt ${attempt} failed: ${details}`
       );
 
       if (attempt < MAX_RETRIES) {

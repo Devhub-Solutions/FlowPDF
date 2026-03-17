@@ -63,6 +63,14 @@ router.get('/health', async (_req, res) => {
  *     description: |
  *       Render a DOCX template with data injection and return a PDF binary.
  *       Alternatively, convert HTML or a URL to PDF.
+ *
+ *       For DOCX rendering, image placeholders use the `{%imageKey}` syntax.
+ *       Any uploaded multipart field whose name matches an image placeholder key
+ *       is treated as an image, normalized to PNG with Sharp, and injected into the DOCX.
+ *
+ *       Optional image size configuration can be provided in the `data` JSON using
+ *       `imageOptions` or `_imageOptions`, for example:
+ *       `{"imageOptions":{"signature":{"width":180,"height":60},"logo":{"w":140,"h":70}}}`
  *     tags: [Render]
  *     requestBody:
  *       required: true
@@ -77,8 +85,8 @@ router.get('/health', async (_req, res) => {
  *                 description: DOCX template file
  *               data:
  *                 type: string
- *                 description: JSON string of variable values
- *                 example: '{"name":"Nguyen Van A","amount":"5,000,000 VND"}'
+ *                 description: JSON string of variable values and optional image sizing config
+ *                 example: '{"name":"Nguyen Van A","amount":"5,000,000 VND","imageOptions":{"signature":{"width":180,"height":60},"logo":{"w":140,"h":70}}}'
  *               html:
  *                 type: string
  *                 description: HTML string to convert (skips template)
@@ -88,7 +96,7 @@ router.get('/health', async (_req, res) => {
  *             additionalProperties:
  *               type: string
  *               format: binary
- *               description: Image files matching template placeholders (e.g. signature, logo, image1, etc.)
+ *               description: Image files matching template placeholders (for example signature, logo, stamp, avatar). Any image format supported by Sharp may be uploaded.
  *     responses:
  *       200:
  *         description: PDF binary
@@ -98,7 +106,7 @@ router.get('/health', async (_req, res) => {
  *               type: string
  *               format: binary
  *       400:
- *         description: Bad request
+ *         description: Bad request (invalid JSON, missing template, unsupported image data, missing placeholder)
  *       401:
  *         description: Missing or invalid Authorization header
  *       403:
@@ -116,6 +124,11 @@ router.post('/render', checkApiKey, multiUpload, renderPdf);
  *     description: |
  *       Same as /render but returns base64-encoded PDF in JSON response.
  *       Alternatively, convert HTML or a URL to PDF.
+ *
+ *       Supports the same image upload behavior as `/render`, including:
+ *       - image placeholders in the form `{%imageKey}`
+ *       - any image format supported by Sharp
+ *       - optional `imageOptions` or `_imageOptions` config in the `data` JSON
  *     tags: [Render]
  *     requestBody:
  *       required: true
@@ -130,7 +143,8 @@ router.post('/render', checkApiKey, multiUpload, renderPdf);
  *                 description: DOCX template file
  *               data:
  *                 type: string
- *                 description: JSON string of variable values
+ *                 description: JSON string of variable values and optional image sizing config
+ *                 example: '{"name":"Nguyen Van A","imageOptions":{"signature":{"width":180,"height":60}}}'
  *               html:
  *                 type: string
  *                 description: HTML string to convert (skips template)
@@ -140,7 +154,7 @@ router.post('/render', checkApiKey, multiUpload, renderPdf);
  *             additionalProperties:
  *               type: string
  *               format: binary
- *               description: Image files matching template placeholders (e.g. signature, logo, image1, etc.)
+ *               description: Image files matching template placeholders. Any image format supported by Sharp may be uploaded.
  *     responses:
  *       200:
  *         description: Base64 encoded PDF
@@ -159,7 +173,11 @@ router.post('/render', checkApiKey, multiUpload, renderPdf);
  *                   type: number
  *                   description: PDF size in bytes
  *       400:
- *         description: Bad request
+ *         description: Bad request (invalid JSON, missing template, unsupported image data, missing placeholder)
+ *       401:
+ *         description: Missing or invalid Authorization header
+ *       403:
+ *         description: Invalid API key
  *       500:
  *         description: Preview failed
  */
@@ -170,7 +188,7 @@ router.post('/preview', checkApiKey, multiUpload, previewPdf);
  * /analyze:
  *   post:
  *     summary: Analyze template placeholders
- *     description: Extract all placeholders from a DOCX template file.
+ *     description: Extract all placeholders from a DOCX template file, including image placeholders in the form `%imageKey`.
  *     tags: [Template]
  *     requestBody:
  *       required: true
@@ -198,6 +216,10 @@ router.post('/preview', checkApiKey, multiUpload, previewPdf);
  *                   example: ["name", "amount", "date", "%signature"]
  *       400:
  *         description: No template file provided
+ *       401:
+ *         description: Missing or invalid Authorization header
+ *       403:
+ *         description: Invalid API key
  *       500:
  *         description: Analysis failed
  */
