@@ -1,6 +1,6 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import PizZip from 'pizzip';
-import { analyzePlaceholders } from '../services/api';
+import { analyzePlaceholders, previewPdf } from '../services/api';
 import { Ico } from '../components/icons/Ico';
 import { uid } from '../utils/uid';
 import type { BuilderBlock } from '../types';
@@ -61,14 +61,29 @@ export default function BuilderPage() {
     { id: uid(), type: 'image', content: 'signature', label: 'Signature' },
   ]);
   const [selected, setSelected] = useState<string | null>(null);
-  const [preview, setPreview] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<string | null>(null);
   const [builderApiKey, setBuilderApiKey] = useState('flowpdf_dev_key');
   const [exporting, setExporting] = useState(false);
 
+  // PDF preview state
+  const [previewStatus, setPreviewStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [previewPdfUrl, setPreviewPdfUrl] = useState<string | null>(null);
+  const [previewError, setPreviewError] = useState<string | null>(null);
+  const [sampleData, setSampleData] = useState<Record<string, string>>({});
+
   const dragId = useRef<string | null>(null);
   const dragOver = useRef<string | null>(null);
+
+  // Derive field blocks for sample data panel
+  const fieldBlocks = blocks.filter((b) => b.type === 'field');
+
+  // Revoke PDF blob URL whenever it changes (cleans up the previous one) and on unmount
+  useEffect(() => {
+    return () => {
+      if (previewPdfUrl) URL.revokeObjectURL(previewPdfUrl);
+    };
+  }, [previewPdfUrl]);
 
   const handleImportDocx = async (file: File) => {
     setUploading(true);
@@ -197,15 +212,19 @@ ${rows.join('\n')}
 </w:document>`;
   };
 
+  /** Build a DOCX Blob from current blocks (reused by both export and preview) */
+  const buildDocxBlob = (): Blob => {
+    const zip = new PizZip();
+    zip.file('_rels/.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`);
+    zip.file('[Content_Types].xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>`);
+    zip.file('word/document.xml', buildDocxXml());
+    return zip.generate({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+  };
+
   const exportDocx = async () => {
     setExporting(true);
     try {
-      const zip = new PizZip();
-      zip.file('_rels/.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`);
-      zip.file('[Content_Types].xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>`);
-      zip.file('word/document.xml', buildDocxXml());
-
-      const blob = zip.generate({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+      const blob = buildDocxBlob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -219,104 +238,307 @@ ${rows.join('\n')}
     setExporting(false);
   };
 
-  const renderPreviewBlock = (b: BuilderBlock) => {
+  const handleGeneratePreview = async () => {
+    setPreviewStatus('loading');
+    setPreviewError(null);
+    if (previewPdfUrl) {
+      URL.revokeObjectURL(previewPdfUrl);
+      setPreviewPdfUrl(null);
+    }
+    try {
+      const docxBlob = buildDocxBlob();
+      const docxFile = new File([docxBlob], 'template.docx', {
+        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      });
+
+      // Build data map: use filled sample values or fallback placeholder text
+      const dataForPreview: Record<string, string> = {};
+      fieldBlocks.forEach((b) => {
+        dataForPreview[b.content] = sampleData[b.content] || `[${b.label || b.content}]`;
+      });
+
+      const base64Pdf = await previewPdf({ template: docxFile, data: dataForPreview, apiKey: builderApiKey });
+
+      // Convert base64 → Blob URL for reliable iframe display
+      const bytes = atob(base64Pdf);
+      const arr = new Uint8Array(bytes.length);
+      for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+      const pdfBlob = new Blob([arr], { type: 'application/pdf' });
+      setPreviewPdfUrl(URL.createObjectURL(pdfBlob));
+      setPreviewStatus('success');
+    } catch (e) {
+      console.error('Preview failed', e);
+      setPreviewError(e instanceof Error ? e.message : 'Preview generation failed');
+      setPreviewStatus('error');
+    }
+  };
+
+  const renderBlockInCanvas = (b: BuilderBlock) => {
     switch (b.type) {
-      case 'heading': return <h2 className="text-xl font-bold text-white tracking-wide mb-0">{b.content || 'Heading'}</h2>;
-      case 'text': return <p className="text-sm text-zinc-300 leading-relaxed">{b.content || 'Paragraph text...'}</p>;
-      case 'field': return <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-lime-400/30 bg-lime-400/5"><span className="text-lime-400 font-mono text-sm">{'{' + b.content + '}'}</span>{b.label && <span className="text-zinc-500 text-xs">({b.label})</span>}</div>;
-      case 'image': return <div className="flex items-center gap-2 p-3 rounded-xl border border-blue-400/20 bg-blue-400/5 w-fit"><Ico.img /><span className="text-blue-400 font-mono text-sm">{'{%'+b.content+'}'}</span></div>;
-      case 'divider': return <hr className="border-zinc-700 my-1" />;
+      case 'heading':
+        return <div className="text-xl font-bold text-zinc-800 leading-tight">{b.content || 'Heading'}</div>;
+      case 'text':
+        return <div className="text-sm text-zinc-600 leading-relaxed">{b.content || 'Paragraph text...'}</div>;
+      case 'field':
+        return (
+          <div className="flex items-center gap-2">
+            {b.label && <span className="text-xs text-zinc-400">{b.label}:</span>}
+            <span className="text-emerald-600 font-mono text-sm bg-emerald-50 px-1.5 py-0.5 rounded">{'{' + b.content + '}'}</span>
+          </div>
+        );
+      case 'image':
+        return (
+          <div className="flex items-center gap-2 text-blue-600">
+            <Ico.img />
+            <span className="font-mono text-sm bg-blue-50 px-1.5 py-0.5 rounded">{'{%' + b.content + '}'}</span>
+            {b.label && <span className="text-xs text-zinc-400">({b.label})</span>}
+          </div>
+        );
+      case 'divider':
+        return <hr className="border-zinc-300" />;
       case 'table': {
         const cols = (b.content || 'col1,col2').split(',').map((c) => c.trim());
-        return <div className="w-full overflow-x-auto"><table className="w-full text-xs border-collapse"><thead><tr>{cols.map((c) => <th key={c} className="border border-zinc-700 px-3 py-1.5 text-left text-zinc-300 bg-zinc-800">{c}</th>)}</tr></thead></table></div>;
+        return (
+          <div className="w-full overflow-x-auto">
+            <table className="w-full text-xs border-collapse">
+              <thead>
+                <tr>{cols.map((c) => <th key={c} className="border border-zinc-200 px-3 py-1.5 text-left text-zinc-600 bg-zinc-50">{c}</th>)}</tr>
+              </thead>
+            </table>
+          </div>
+        );
       }
-      default: return null;
+      default:
+        return null;
     }
   };
 
   const selBlock = blocks.find((b) => b.id === selected);
+  const canPreview = blocks.length > 0 && previewStatus !== 'loading';
 
   return (
-    <div className="grid grid-cols-[260px_1fr_300px] gap-5 h-full">
-      <div className="flex flex-col gap-3">
-        <div className="card">
-          <p className="card-title mb-3">Import DOCX</p>
-          <div className="drop-zone py-5" onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f?.name.endsWith('.docx')) handleImportDocx(f); }} onDragOver={(e) => e.preventDefault()} onClick={() => document.getElementById('builder-docx-input')?.click()}>
-            {uploading ? <><span className="w-6 h-6 border-2 border-lime-400 border-t-transparent rounded-full animate-spin mb-2" /><p className="text-xs text-zinc-400">Parsing template...</p></> : uploadedFile ? <><div className="w-8 h-8 rounded-lg bg-lime-400/10 border border-lime-400/20 flex items-center justify-center mb-2"><Ico.file /></div><p className="text-xs text-lime-400 font-mono truncate max-w-full px-2">{uploadedFile}</p><p className="text-xs text-zinc-600 mt-1">click to replace</p></> : <><div className="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center mb-2"><Ico.upload /></div><p className="text-xs font-medium text-white">Drop .docx to import</p></>}
-            <input id="builder-docx-input" type="file" accept=".docx" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImportDocx(f); e.currentTarget.value = ''; }} />
-          </div>
-          <div className="mt-3">
-            <label className="field-label">API Key (for analyze)</label>
-            <div className="relative">
-              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-500"><Ico.key /></span>
-              <input type="text" value={builderApiKey} onChange={(e) => setBuilderApiKey(e.target.value)} className="input pl-8 text-xs font-mono" placeholder="flowpdf_dev_key" />
-            </div>
-          </div>
+    <div className="flex flex-col gap-3 h-full">
+
+      {/* ── Toolbar ─────────────────────────────────────────────── */}
+      <div className="card p-3 flex items-center gap-3 flex-wrap">
+        {/* Import DOCX */}
+        <button
+          onClick={() => document.getElementById('builder-docx-input')?.click()}
+          disabled={uploading}
+          className="flex items-center gap-2 btn-secondary text-xs px-3 py-2"
+        >
+          {uploading
+            ? <><span className="w-3.5 h-3.5 border-2 border-lime-400 border-t-transparent rounded-full animate-spin" /> Parsing...</>
+            : <><Ico.upload /> {uploadedFile ? <span className="text-lime-400 font-mono truncate max-w-[120px]">{uploadedFile}</span> : 'Import .docx'}</>}
+        </button>
+        <input id="builder-docx-input" type="file" accept=".docx" className="hidden"
+          onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImportDocx(f); e.currentTarget.value = ''; }}
+        />
+
+        {/* Add block buttons */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {BLOCK_TYPES.map((bt) => (
+            <button key={bt.type} onClick={() => addBlock(bt.type)}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-zinc-700 bg-zinc-800/60 hover:border-zinc-500 hover:bg-zinc-700/60 text-zinc-300 text-xs transition-all"
+              title={bt.desc}
+            >
+              <span className="text-zinc-400">{bt.icon}</span>{bt.label}
+            </button>
+          ))}
         </div>
 
-        <div className="card">
-          <p className="card-title mb-3">Add Block</p>
-          <div className="flex flex-col gap-1.5">
-            {BLOCK_TYPES.map((bt) => (
-              <button key={bt.type} onClick={() => addBlock(bt.type)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-zinc-800 bg-zinc-900/40 hover:border-zinc-600 hover:bg-zinc-800/60 transition-all text-left group">
-                <div className="w-8 h-8 rounded-lg bg-zinc-800 group-hover:bg-zinc-700 flex items-center justify-center flex-shrink-0 text-zinc-400 transition-colors">{bt.icon}</div>
-                <div><p className="text-xs font-medium text-zinc-300">{bt.label}</p><p className="text-xs text-zinc-600">{bt.desc}</p></div>
-                <div className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity text-zinc-500"><Ico.plus /></div>
-              </button>
-            ))}
-          </div>
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        {/* API Key */}
+        <div className="relative">
+          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-500"><Ico.key /></span>
+          <input type="text" value={builderApiKey} onChange={(e) => setBuilderApiKey(e.target.value)}
+            className="input pl-8 text-xs font-mono w-44 py-2" placeholder="API key" />
         </div>
 
-        <div className="card">
-          <p className="card-title mb-3">Export</p>
-          <button onClick={exportDocx} disabled={exporting || blocks.length === 0} className={`w-full h-10 rounded-xl font-mono font-bold text-sm flex items-center justify-center gap-2 transition-all mb-2 ${blocks.length > 0 && !exporting ? 'bg-lime-400 text-zinc-950 hover:bg-lime-300' : 'bg-zinc-800 text-zinc-600 cursor-not-allowed'}`}>
-            {exporting ? 'Exporting...' : <><Ico.download /> Download .docx</>}
-          </button>
-          <button onClick={copyTemplate} className="btn-secondary w-full flex items-center justify-center gap-2 text-xs"><Ico.code /> Copy Syntax Only</button>
-        </div>
+        {/* Export */}
+        <button onClick={exportDocx} disabled={exporting || blocks.length === 0}
+          className={`flex items-center gap-2 text-xs font-mono px-3 py-2 rounded-xl transition-all ${blocks.length > 0 && !exporting ? 'bg-lime-400 text-zinc-950 hover:bg-lime-300' : 'bg-zinc-800 text-zinc-600 cursor-not-allowed'}`}>
+          {exporting ? 'Exporting...' : <><Ico.download /> .docx</>}
+        </button>
+        <button onClick={copyTemplate} className="btn-secondary flex items-center gap-1.5 text-xs px-3 py-2">
+          <Ico.code /> Syntax
+        </button>
       </div>
 
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3"><h2 className="text-sm font-mono font-bold text-zinc-300 uppercase tracking-wider">Canvas</h2><span className="text-xs text-zinc-600">{blocks.length} blocks</span></div>
-          <button onClick={() => setPreview((p) => !p)} className={`flex items-center gap-1.5 text-xs font-mono px-3 py-1.5 rounded-lg transition-all border ${preview ? 'bg-lime-400/10 text-lime-400 border-lime-400/30' : 'bg-zinc-800 text-zinc-400 border-zinc-700 hover:border-zinc-600'}`}><Ico.eye /> {preview ? 'Preview ON' : 'Preview OFF'}</button>
-        </div>
+      {/* ── Main two-column area ─────────────────────────────────── */}
+      <div className="flex-1 grid grid-cols-[1fr_380px] gap-4 min-h-0">
 
-        <div className="card flex-1 overflow-y-auto" style={{ minHeight: '500px' }}>
-          <div className="bg-white rounded-xl p-8 min-h-full shadow-2xl">
-            <div className="space-y-4">
-              {blocks.map((b) => (
-                <div key={b.id} draggable onDragStart={() => handleDragStart(b.id)} onDragEnter={() => handleDragEnterBlock(b.id)} onDragOver={(e) => e.preventDefault()} onDrop={handleDrop} onClick={() => setSelected(b.id === selected ? null : b.id)} className={`group relative rounded-lg transition-all cursor-pointer ${selected === b.id ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:bg-zinc-50'}`} style={{ padding: '6px 8px' }}>
-                  {preview ? renderPreviewBlock(b) : <div>{b.type === 'heading' ? <div className="text-xl font-bold text-zinc-800">{b.content}</div> : b.type === 'text' ? <div className="text-sm text-zinc-600">{b.content}</div> : b.type === 'field' ? <div className="text-emerald-600 font-mono text-sm">{'{'+b.content+'}'}</div> : b.type === 'image' ? <div className="text-blue-600 font-mono text-sm">{'{%'+b.content+'}'}</div> : b.type === 'divider' ? <hr className="border-zinc-300" /> : <div className="text-zinc-500">table</div>}</div>}
-                </div>
-              ))}
+        {/* Left: Document Editor */}
+        <div className="flex flex-col gap-3 min-h-0">
+          <div className="flex items-center gap-3">
+            <h2 className="text-xs font-mono font-semibold text-zinc-400 uppercase tracking-wider">Document Editor</h2>
+            <span className="text-xs text-zinc-600">{blocks.length} block{blocks.length !== 1 ? 's' : ''}</span>
+            <span className="text-xs text-zinc-700">· drag to reorder · click to edit</span>
+          </div>
+
+          {/* Paper canvas */}
+          <div className="card flex-1 overflow-y-auto p-3" style={{ minHeight: '420px' }}>
+            <div className="bg-white rounded-lg shadow-xl mx-auto" style={{ maxWidth: '680px', minHeight: '100%', padding: '48px 56px' }}>
+              {blocks.length === 0 && (
+                <p className="text-zinc-400 text-sm text-center py-16">No blocks yet — use the toolbar above to add content.</p>
+              )}
+              <div className="space-y-3">
+                {blocks.map((b) => (
+                  <div
+                    key={b.id}
+                    draggable
+                    onDragStart={() => handleDragStart(b.id)}
+                    onDragEnter={() => handleDragEnterBlock(b.id)}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={handleDrop}
+                    onClick={() => setSelected(b.id === selected ? null : b.id)}
+                    className={`group relative rounded-lg transition-all cursor-pointer px-2 py-1.5 ${
+                      selected === b.id
+                        ? 'ring-2 ring-blue-500 bg-blue-50'
+                        : 'hover:bg-zinc-50 hover:ring-1 hover:ring-zinc-200'
+                    }`}
+                  >
+                    {/* Drag handle */}
+                    <span className="absolute left-[-18px] top-1/2 -translate-y-1/2 text-zinc-300 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Ico.drag />
+                    </span>
+                    {renderBlockInCanvas(b)}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      <div className="flex flex-col gap-3">
-        <div className="card flex-1">
-          <p className="card-title mb-3">Properties</p>
-          {!selBlock ? <p className="text-xs text-zinc-600 font-mono">Click a block to edit</p> : (
-            <div className="flex flex-col gap-4">
+          {/* Inline properties panel (shown when a block is selected) */}
+          {selBlock && (
+            <div className="card p-3 flex items-end gap-3 flex-wrap animate-fade-up">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-mono text-zinc-500 uppercase">
+                  {selBlock.type}
+                </span>
+              </div>
               {selBlock.type !== 'divider' && (
-                <input type="text" value={selBlock.content} onChange={(e) => updateBlock(selBlock.id, { content: e.target.value })} className="input text-sm w-full" />
+                <div className="flex-1 min-w-[160px]">
+                  <label className="field-label">Content</label>
+                  <input
+                    type="text"
+                    value={selBlock.content}
+                    onChange={(e) => updateBlock(selBlock.id, { content: e.target.value })}
+                    className="input text-sm"
+                  />
+                </div>
               )}
               {(selBlock.type === 'field' || selBlock.type === 'image' || selBlock.type === 'table') && (
-                <input type="text" value={selBlock.label || ''} onChange={(e) => updateBlock(selBlock.id, { label: e.target.value })} className="input text-sm w-full" placeholder="Human-readable label" />
+                <div className="flex-1 min-w-[140px]">
+                  <label className="field-label">Label</label>
+                  <input
+                    type="text"
+                    value={selBlock.label || ''}
+                    onChange={(e) => updateBlock(selBlock.id, { label: e.target.value })}
+                    className="input text-sm"
+                    placeholder="Human-readable label"
+                  />
+                </div>
               )}
-              <button onClick={() => removeBlock(selBlock.id)} className="flex items-center justify-center gap-2 text-xs text-red-400 border border-red-500/20 rounded-xl py-2.5"><Ico.trash /> Remove Block</button>
+              <button
+                onClick={() => removeBlock(selBlock.id)}
+                className="flex items-center gap-1.5 text-xs text-red-400 border border-red-500/20 rounded-xl px-3 py-2.5 hover:bg-red-500/10 transition-colors"
+              >
+                <Ico.trash /> Remove
+              </button>
             </div>
           )}
         </div>
 
-        <div className="card">
-          <div className="flex items-center justify-between mb-2">
-            <p className="card-title text-xs">Template Syntax</p>
-            <button onClick={copyTemplate} className="text-xs text-zinc-500 hover:text-zinc-300 font-mono flex items-center gap-1 transition-colors"><Ico.code /> copy</button>
+        {/* Right: PDF Preview */}
+        <div className="flex flex-col gap-3 min-h-0">
+          <h2 className="text-xs font-mono font-semibold text-zinc-400 uppercase tracking-wider">PDF Preview</h2>
+
+          {/* Sample data inputs */}
+          <div className="card">
+            <p className="card-title mb-3">Sample Data</p>
+            {fieldBlocks.length === 0 ? (
+              <p className="text-xs text-zinc-600 font-mono">Add {'{field}'} blocks to fill sample values.</p>
+            ) : (
+              <div className="flex flex-col gap-2.5">
+                {fieldBlocks.map((b) => (
+                  <div key={b.id}>
+                    <label className="field-label">{b.label || b.content}</label>
+                    <input
+                      type="text"
+                      value={sampleData[b.content] ?? ''}
+                      onChange={(e) => setSampleData((prev) => ({ ...prev, [b.content]: e.target.value }))}
+                      className="input text-sm"
+                      placeholder={`[${b.content}]`}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <button
+              onClick={handleGeneratePreview}
+              disabled={!canPreview}
+              className={`mt-4 w-full h-10 rounded-xl font-mono font-bold text-sm flex items-center justify-center gap-2 transition-all ${
+                canPreview
+                  ? 'bg-lime-400 text-zinc-950 hover:bg-lime-300'
+                  : 'bg-zinc-800 text-zinc-600 cursor-not-allowed'
+              }`}
+            >
+              {previewStatus === 'loading'
+                ? <><span className="w-4 h-4 border-2 border-zinc-950 border-t-transparent rounded-full animate-spin" /> Rendering...</>
+                : <><Ico.eye /> Generate Preview</>}
+            </button>
+
+            {previewStatus === 'error' && previewError && (
+              <p className="mt-2 text-xs text-red-400 font-mono">{previewError}</p>
+            )}
           </div>
-          <pre className="text-xs font-mono text-zinc-500 overflow-x-auto whitespace-pre-wrap leading-relaxed max-h-48 overflow-y-auto bg-zinc-950 rounded-lg p-3 border border-zinc-800">{generateTemplate() || '- empty -'}</pre>
+
+          {/* PDF viewer */}
+          <div className="card flex-1 flex flex-col min-h-0 p-2">
+            {previewStatus === 'idle' && (
+              <div className="flex-1 flex flex-col items-center justify-center text-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-zinc-800 flex items-center justify-center">
+                  <Ico.eye />
+                </div>
+                <p className="text-xs text-zinc-500">Fill sample data and click<br /><span className="text-lime-400 font-mono">Generate Preview</span> to render the PDF.</p>
+              </div>
+            )}
+            {previewStatus === 'loading' && (
+              <div className="flex-1 flex items-center justify-center">
+                <span className="w-8 h-8 border-2 border-lime-400 border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
+            {previewStatus === 'error' && (
+              <div className="flex-1 flex flex-col items-center justify-center gap-2">
+                <p className="text-xs text-red-400 font-mono text-center">Render failed.<br />Check that the API is running and the API key is correct.</p>
+                <button onClick={handleGeneratePreview} className="btn-secondary text-xs px-3 py-1.5">Retry</button>
+              </div>
+            )}
+            {previewStatus === 'success' && previewPdfUrl && (
+              <div className="flex flex-col gap-2 h-full min-h-0">
+                <div className="flex items-center justify-between px-1">
+                  <span className="text-xs text-lime-400 font-mono flex items-center gap-1"><Ico.check /> PDF ready</span>
+                  <a
+                    href={previewPdfUrl}
+                    download="preview.pdf"
+                    className="btn-secondary text-xs px-2.5 py-1 flex items-center gap-1.5"
+                  >
+                    <Ico.download /> Download
+                  </a>
+                </div>
+                <iframe
+                  src={previewPdfUrl}
+                  className="flex-1 rounded-xl border border-zinc-700 bg-white"
+                  style={{ minHeight: '400px' }}
+                  title="PDF Preview"
+                />
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
