@@ -90,3 +90,50 @@ body {
   to   { opacity: 1; transform: translateY(0); }
 }
 .animate-fade-up { animation: fadeUp 0.35s ease forwards; }
+
+/* ── TipTap / ProseMirror document editor ─────────────────── */
+.docx-editor {
+  outline: none;
+  min-height: 600px;
+  padding: 48px 56px;
+  font-family: 'Georgia', 'Times New Roman', serif;
+  font-size: 14px;
+  color: #1c1c1e;
+  line-height: 1.7;
+  caret-color: #3b82f6;
+}
+
+.docx-editor h1 { font-size: 22px; font-weight: 700; margin: 0 0 12px; color: #111; }
+.docx-editor h2 { font-size: 18px; font-weight: 700; margin: 0 0 10px; color: #111; }
+.docx-editor h3 { font-size: 15px; font-weight: 600; margin: 0 0 8px;  color: #111; }
+.docx-editor p  { margin: 0 0 8px; }
+.docx-editor ul,
+.docx-editor ol { padding-left: 24px; margin: 0 0 8px; }
+.docx-editor li { margin-bottom: 4px; }
+.docx-editor hr { border: none; border-top: 1px solid #ccc; margin: 16px 0; }
+.docx-editor blockquote {
+  border-left: 3px solid #d1d5db;
+  padding-left: 12px;
+  color: #6b7280;
+  margin: 0 0 8px;
+}
+
+/* Template placeholder highlights inside the editor */
+.docx-editor p:has(> .tpl-field),
+.docx-editor .tpl-field {
+  color: #166534;
+  background: #f0fdf4;
+  border-radius: 3px;
+  padding: 1px 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+}
+
+/* Cursor blink on empty doc */
+.docx-editor.ProseMirror-focused p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: #9ca3af;
+  pointer-events: none;
+  float: left;
+  height: 0;
+}
