@@ -1,0 +1,16 @@
+{
+  "contract_no": "HD-2025-001",
+  "date": "15/01/2025",
+  "provider_name": "FlowPDF Technology JSC",
+  "provider_address": "123 Nguyen Hue, Quan 1, TP.HCM",
+  "provider_tax": "0123456789",
+  "client_name": "Nguyen Van A",
+  "client_email": "nguyenvana@email.com",
+  "client_phone": "0901234567",
+  "service_name": "PDF Automation Platform",
+  "service_description": "Tự động hóa quy trình tạo PDF từ template và dữ liệu",
+  "start_date": "01/02/2025",
+  "end_date": "31/12/2025",
+  "total_amount": "12,000,000",
+  "payment_method": "Chuyển khoản ngân hàng"
+}

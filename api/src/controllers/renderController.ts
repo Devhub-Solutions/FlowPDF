@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import sharp from 'sharp';
 import { renderDocx, extractPlaceholders } from '../services/docxService';
 import { convertDocxToPdf, convertHtmlToPdf, convertUrlToPdf } from '../services/gotenbergService';
+import { sanitizeDocxXml } from '../services/docxSanitize';
 import { logger } from '../utils/logger';
 
 interface MulterFile {
@@ -185,7 +186,7 @@ export async function renderPdf(req: MulterRequest, res: Response): Promise<void
     }
 
     const docxBuffer = renderDocx({ templateBuffer, data: renderData, images, imageSizes });
-    const pdfBuffer = await convertDocxToPdf(docxBuffer);
+    const pdfBuffer = await convertDocxToPdf(sanitizeDocxXml(docxBuffer));
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', 'attachment; filename="document.pdf"');
@@ -277,7 +278,7 @@ export async function previewPdf(req: MulterRequest, res: Response): Promise<voi
     }
 
     const docxBuffer = renderDocx({ templateBuffer, data: renderData, images, imageSizes });
-    const pdfBuffer = await convertDocxToPdf(docxBuffer);
+    const pdfBuffer = await convertDocxToPdf(sanitizeDocxXml(docxBuffer));
 
     res.json({
       success: true,

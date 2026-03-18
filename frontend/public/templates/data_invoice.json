@@ -1,0 +1,37 @@
+{
+  "invoice_no": "INV-2025-042",
+  "invoice_date": "15/01/2025",
+  "customer_name": "Tran Thi B",
+  "customer_address": "456 Le Loi, Quan 3, TP.HCM",
+  "customer_email": "tranthib@company.vn",
+  "items": [
+    {
+      "index": 1,
+      "name": "FlowPDF Pro License (1 năm)",
+      "qty": 1,
+      "unit_price": "8,000,000",
+      "total": "8,000,000"
+    },
+    {
+      "index": 2,
+      "name": "Template Design Service",
+      "qty": 5,
+      "unit_price": "500,000",
+      "total": "2,500,000"
+    },
+    {
+      "index": 3,
+      "name": "API Integration Support (giờ)",
+      "qty": 10,
+      "unit_price": "300,000",
+      "total": "3,000,000"
+    }
+  ],
+  "subtotal": "13,500,000 VNĐ",
+  "vat": "1,350,000 VNĐ",
+  "grand_total": "14,850,000 VNĐ",
+  "is_paid": true,
+  "paid_date": "15/01/2025",
+  "due_date": "30/01/2025",
+  "notes": "Cảm ơn quý khách đã sử dụng dịch vụ FlowPDF!"
+}

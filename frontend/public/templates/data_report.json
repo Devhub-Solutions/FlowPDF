@@ -1,0 +1,30 @@
+{
+  "period": "Quý 1/2025",
+  "author": "Nguyen Van HR",
+  "export_date": "15/01/2025",
+  "total_employees": 24,
+  "new_hires": 3,
+  "resigned": 1,
+  "departments": [
+    {
+      "dept_name": "Engineering",
+      "manager": "Le Van Tech",
+      "headcount": 8,
+      "members": [
+        { "full_name": "Nguyen Minh Duc",  "position": "Senior Dev",    "email": "duc@co.vn",    "is_active": true },
+        { "full_name": "Tran Thi Mai",     "position": "Frontend Dev",  "email": "mai@co.vn",    "is_active": true },
+        { "full_name": "Pham Van Long",    "position": "DevOps",        "email": "long@co.vn",   "is_active": false }
+      ]
+    },
+    {
+      "dept_name": "Sales",
+      "manager": "Hoang Thi Thu",
+      "headcount": 6,
+      "members": [
+        { "full_name": "Vo Minh Khoa",    "position": "Sales Lead",    "email": "khoa@co.vn",   "is_active": true },
+        { "full_name": "Dang Thi Lan",    "position": "Account Exec",  "email": "lan@co.vn",    "is_active": true }
+      ]
+    }
+  ],
+  "remarks": "Tất cả nhân viên đã hoàn thành đánh giá hiệu suất Q4/2024. Cần tuyển thêm 2 developer cho Q2/2025."
+}
