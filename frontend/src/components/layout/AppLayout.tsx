@@ -5,10 +5,11 @@ export function AppLayout() {
   const location = useLocation();
 
   const tabs = [
-    { to: '/render', label: 'Render', icon: <Ico.zap /> },
-    { to: '/merge', label: 'Merge PDF', icon: <Ico.merge /> },
-    { to: '/builder', label: 'Template Builder', icon: <Ico.cursor /> },
-    { to: '/guide', label: 'Hướng dẫn', icon: <Ico.book /> },
+    { to: '/render',   label: 'Render',           icon: <Ico.zap /> },
+    { to: '/merge',    label: 'Merge PDF',         icon: <Ico.merge /> },
+    { to: '/builder',  label: 'Template Builder',  icon: <Ico.cursor /> },
+    { to: '/guide',    label: 'Hướng dẫn',         icon: <Ico.book /> },
+    { to: '/api-docs', label: 'API Docs',           icon: <Ico.code /> },
   ];
 
   return (

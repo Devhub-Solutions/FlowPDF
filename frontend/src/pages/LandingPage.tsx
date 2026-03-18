@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Ico } from '../components/icons/Ico';
 
 export default function LandingPage() {
@@ -17,13 +17,17 @@ export default function LandingPage() {
           </div>
           <div className="ml-auto flex items-center gap-3">
             <a
-              href="/api-docs"
-              target="_blank"
-              rel="noreferrer"
+              href="/guide"
               className="text-sm text-zinc-400 hover:text-zinc-200 transition-colors font-mono px-3 py-1.5 rounded-lg hover:bg-zinc-800"
             >
-              API Docs
+              📖 Hướng dẫn
             </a>
+            <Link
+              to="/api-docs"
+              className="text-sm text-zinc-400 hover:text-zinc-200 transition-colors font-mono px-3 py-1.5 rounded-lg hover:bg-zinc-800"
+            >
+              ⚡ API Docs
+            </Link>
             <button
               onClick={() => navigate('/render')}
               className="flex items-center gap-2 px-4 py-1.5 rounded-xl bg-lime-400 text-zinc-950 text-sm font-bold font-mono hover:bg-lime-300 transition-all shadow-[0_0_16px_rgba(163,230,53,0.25)] active:scale-95"
@@ -62,14 +66,12 @@ export default function LandingPage() {
             >
               <Ico.zap /> Open App
             </button>
-            <a
-              href="/api-docs"
-              target="_blank"
-              rel="noreferrer"
+            <Link
+              to="/api-docs"
               className="flex items-center gap-2 px-6 py-3 rounded-xl border border-zinc-700 bg-zinc-800/60 text-zinc-300 font-mono text-sm hover:border-zinc-600 hover:bg-zinc-700/60 transition-all"
             >
               <Ico.code /> API Reference
-            </a>
+            </Link>
           </div>
         </div>
 

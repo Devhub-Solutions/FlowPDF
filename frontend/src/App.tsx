@@ -6,6 +6,7 @@ import RenderPage from './pages/RenderPage';
 import BuilderPage from './pages/BuilderPage';
 import MergePage from './pages/MergePage';
 import GuidePage from './pages/GuidePage';
+import ApiDocsPage from './pages/ApiDocsPage';
 
 export default function App() {
   return (
@@ -17,6 +18,7 @@ export default function App() {
         <Route path="/merge" element={<MergePage />} />
       </Route>
       <Route path="/guide" element={<GuidePage />} />
+      <Route path="/api-docs" element={<ApiDocsPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
