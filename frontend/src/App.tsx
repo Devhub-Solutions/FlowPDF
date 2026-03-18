@@ -5,6 +5,7 @@ import LandingPage from './pages/LandingPage';
 import RenderPage from './pages/RenderPage';
 import BuilderPage from './pages/BuilderPage';
 import MergePage from './pages/MergePage';
+import GuidePage from './pages/GuidePage';
 
 export default function App() {
   return (
@@ -15,6 +16,7 @@ export default function App() {
         <Route path="/builder" element={<BuilderPage />} />
         <Route path="/merge" element={<MergePage />} />
       </Route>
+      <Route path="/guide" element={<GuidePage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
