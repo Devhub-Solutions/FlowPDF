@@ -11,9 +11,12 @@ services:
       PORT: 8080
       FLOWPDF_API_KEY: flowpdf_dev_key
       GOTENBERG_URL: http://gotenberg:3000
+      PYTHON_AI_URL: http://python-ai:8000
       LOG_LEVEL: info
     depends_on:
       gotenberg:
+        condition: service_healthy
+      python-ai:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
@@ -38,3 +41,21 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+
+  # Internal AI service – not exposed publicly; accessed via the flowpdf API proxy
+  python-ai:
+    build:
+      context: ./python-ai
+      dockerfile: Dockerfile
+    container_name: flowpdf-python-ai
+    expose:
+      - "8000"
+    environment:
+      PYTHONUNBUFFERED: "1"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s

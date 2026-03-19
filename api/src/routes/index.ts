@@ -4,6 +4,8 @@ import { checkApiKey } from '../middleware/auth';
 import { renderPdf, previewPdf, analyzePlaceholders } from '../controllers/renderController';
 import { combineToPdf } from '../controllers/combineController';
 import { checkGotenbergHealth } from '../services/gotenbergService';
+import { checkPythonAiHealth } from '../services/pythonAiService';
+import { ocrImage, detectObjects } from '../controllers/aiController';
 
 const router = Router();
 
@@ -19,6 +21,7 @@ const multiUpload = upload.any();
 
 const MAX_COMBINE_FILES = 20;
 const combineUpload = upload.array('files', MAX_COMBINE_FILES);
+const aiImageUpload = upload.single('image');
 
 /**
  * @openapi
@@ -48,9 +51,11 @@ const combineUpload = upload.array('files', MAX_COMBINE_FILES);
  */
 router.get('/health', async (_req, res) => {
   const gotenbergOk = await checkGotenbergHealth();
+  const pythonAiOk = await checkPythonAiHealth();
   res.json({
     status: 'ok',
     gotenberg: gotenbergOk ? 'ok' : 'unavailable',
+    pythonAi: pythonAiOk ? 'ok' : 'unavailable',
     timestamp: new Date().toISOString(),
   });
 });
@@ -278,5 +283,117 @@ router.post('/analyze', checkApiKey, multiUpload, analyzePlaceholders);
  *         description: Combine failed
  */
 router.post('/combine', checkApiKey, combineUpload, combineToPdf);
+
+/**
+ * @openapi
+ * /ocr:
+ *   post:
+ *     summary: Extract Vietnamese text from an image (VietOCR)
+ *     description: |
+ *       Upload an image file and receive the extracted text using the VietOCR
+ *       deep-learning model. The AI service runs internally; this endpoint acts
+ *       as a proxy so callers only need to reach the main FlowPDF API port.
+ *     tags: [AI]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - image
+ *             properties:
+ *               image:
+ *                 type: string
+ *                 format: binary
+ *                 description: Image file to extract text from (JPEG, PNG, BMP, TIFF, …)
+ *     responses:
+ *       200:
+ *         description: Extracted text
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 text:
+ *                   type: string
+ *                   example: "Cộng hòa xã hội chủ nghĩa Việt Nam"
+ *                 filename:
+ *                   type: string
+ *       400:
+ *         description: No image file provided
+ *       401:
+ *         description: Missing or invalid Authorization header
+ *       403:
+ *         description: Invalid API key
+ *       500:
+ *         description: OCR failed
+ */
+router.post('/ocr', checkApiKey, aiImageUpload, ocrImage);
+
+/**
+ * @openapi
+ * /detect:
+ *   post:
+ *     summary: Detect objects in an image (YOLO)
+ *     description: |
+ *       Upload an image file and receive a list of detected objects using the
+ *       YOLO model (ultralytics). Each detection includes class name, confidence
+ *       score, and bounding-box coordinates [x1, y1, x2, y2].
+ *       The AI service runs internally; this endpoint proxies the request so
+ *       callers only need to reach the main FlowPDF API port.
+ *     tags: [AI]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - image
+ *             properties:
+ *               image:
+ *                 type: string
+ *                 format: binary
+ *                 description: Image file to analyse (JPEG, PNG, BMP, TIFF, …)
+ *     responses:
+ *       200:
+ *         description: Detection results
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 detections:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       class:
+ *                         type: string
+ *                         example: person
+ *                       confidence:
+ *                         type: number
+ *                         example: 0.92
+ *                       bbox:
+ *                         type: array
+ *                         items:
+ *                           type: number
+ *                         example: [120.5, 80.2, 340.1, 460.7]
+ *                 count:
+ *                   type: integer
+ *                   example: 3
+ *                 filename:
+ *                   type: string
+ *       400:
+ *         description: No image file provided
+ *       401:
+ *         description: Missing or invalid Authorization header
+ *       403:
+ *         description: Invalid API key
+ *       500:
+ *         description: Detection failed
+ */
+router.post('/detect', checkApiKey, aiImageUpload, detectObjects);
 
 export default router;
