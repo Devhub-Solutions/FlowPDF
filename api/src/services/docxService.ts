@@ -2,6 +2,22 @@ import Docxtemplater from 'docxtemplater';
 import PizZip from 'pizzip';
 import { logger } from '../utils/logger';
 
+export class TemplateRenderError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'TemplateRenderError';
+  }
+}
+
+interface DocxtemplaterError {
+  name?: string;
+  message?: string;
+  properties?: {
+    errors?: Array<{ properties?: { explanation?: string } }>;
+    explanation?: string;
+  };
+}
+
 export interface RenderOptions {
   templateBuffer: Buffer;
   data: Record<string, unknown>;
@@ -276,7 +292,26 @@ export function renderDocx(options: RenderOptions): Buffer {
     paragraphLoop: true,
     linebreaks: true,
   });
-  doc.render({ ...data });
+  try {
+    doc.render({ ...data });
+  } catch (renderError) {
+    const err = renderError as DocxtemplaterError;
+    if (err.name === 'TemplateError' || err.name === 'RenderingError' || err.name === 'ScopeParserError') {
+      let message: string;
+      if (err.properties?.errors && err.properties.errors.length > 0) {
+        const explanations = err.properties.errors
+          .map((e) => e.properties?.explanation)
+          .filter(Boolean) as string[];
+        message = explanations.length > 0 ? explanations.join('; ') : (err.message ?? 'Template has errors');
+      } else if (err.properties?.explanation) {
+        message = err.properties.explanation;
+      } else {
+        message = err.message ?? 'Template has errors';
+      }
+      throw new TemplateRenderError(message);
+    }
+    throw renderError;
+  }
 
   // Step 3: inject images via direct ZIP manipulation
   const renderedZip = doc.getZip();
