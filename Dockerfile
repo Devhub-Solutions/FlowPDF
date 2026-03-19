@@ -9,6 +9,7 @@ RUN npm ci --include=dev && test -x node_modules/.bin/vite
 COPY frontend/index.html frontend/tsconfig.json frontend/tsconfig.node.json ./
 COPY frontend/vite.config.ts frontend/postcss.config.js frontend/tailwind.config.js ./
 COPY frontend/src ./src
+COPY frontend/public ./public
 RUN npm run build
 
 # Stage 2: Build API
