@@ -1,0 +1,66 @@
+FlowPDF
+Copyright (C) 2025 Công ty TNHH Devhub Solutions (MST: 0319405240)
+All rights reserved.
+
+This product is licensed under the GNU Affero General Public License v3.0
+(AGPL-3.0). See the LICENSE file for the full license text.
+
+For commercial licensing (including proprietary/internal use without the
+AGPL-3.0 source-disclosure requirement), please contact:
+  Công ty TNHH Devhub Solutions
+  https://github.com/Devhub-Solutions
+
+================================================================================
+THIRD-PARTY SOFTWARE NOTICES
+================================================================================
+
+This product incorporates components from the following open-source projects:
+
+--------------------------------------------------------------------------------
+1. Ultralytics YOLO
+   Source  : https://github.com/ultralytics/ultralytics
+   License : GNU Affero General Public License v3.0 (AGPL-3.0)
+   Copyright (C) Ultralytics Inc.
+
+   YOLO (You Only Look Once) object-detection models are used in the
+   python-ai service for image object detection. This usage, combined with
+   the AGPL-3.0 requirements of ultralytics, is a primary reason this
+   project is distributed under AGPL-3.0.
+
+   Full Ultralytics license: https://github.com/ultralytics/ultralytics/blob/main/LICENSE
+
+--------------------------------------------------------------------------------
+2. VietOCR
+   Source  : https://github.com/pbcquoc/vietocr
+   License : MIT License
+   Copyright (C) pbcquoc
+
+   Used in the python-ai service for Vietnamese text recognition (OCR).
+
+--------------------------------------------------------------------------------
+3. FastAPI
+   Source  : https://github.com/tiangolo/fastapi
+   License : MIT License
+   Copyright (C) Sebastián Ramírez
+
+--------------------------------------------------------------------------------
+4. Docxtemplater
+   Source  : https://github.com/open-xml-templating/docxtemplater
+   License : MIT License (Community Edition)
+
+--------------------------------------------------------------------------------
+5. Gotenberg
+   Source  : https://github.com/gotenberg/gotenberg
+   License : MIT License
+   Copyright (C) Julien Neuhart
+
+--------------------------------------------------------------------------------
+6. React
+   Source  : https://github.com/facebook/react
+   License : MIT License
+   Copyright (C) Meta Platforms, Inc. and affiliates.
+
+--------------------------------------------------------------------------------
+A full list of Node.js and Python dependencies and their licenses can be found
+in api/package.json, frontend/package.json, and python-ai/requirements.txt.
+================================================================================
