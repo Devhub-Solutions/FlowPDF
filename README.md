@@ -1,5 +1,9 @@
 # FlowPDF
 
+> **Copyright (C) 2025 Công ty TNHH Devhub Solutions (MST: 0319405240)**  
+> Licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**.  
+> Commercial / proprietary licensing available — see [License](#license) section below.
+
 **DOCX Template → PDF rendering microservice.**  
 Upload a `.docx` template with `{placeholder}` variables, inject JSON data, and get a crisp PDF back in milliseconds.
 
@@ -371,4 +375,33 @@ flowpdf/
 
 ## License
 
-MIT
+FlowPDF is copyright (C) 2025 **Công ty TNHH Devhub Solutions** (MST: 0319405240) and is
+distributed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**.
+
+This project incorporates [Ultralytics YOLO](https://github.com/ultralytics/ultralytics),
+which is licensed under AGPL-3.0. Use of Ultralytics software in this project therefore
+requires this project to also be distributed under AGPL-3.0.
+
+### What AGPL-3.0 means for you
+
+| Use-case | Requirement |
+|---|---|
+| Use the public hosted service | No source-code obligations |
+| Self-host with no modifications | Must keep this LICENSE file intact |
+| Self-host with modifications | Must publish your modified source under AGPL-3.0 |
+| Embed / redistribute in your own product | Must open-source the whole combined work under AGPL-3.0 |
+| Internal / proprietary use without open-sourcing | **Commercial license required** — contact us |
+
+### Commercial Licensing
+
+If you need to use FlowPDF in a proprietary product, integrate it internally
+without the AGPL-3.0 source-disclosure obligation, or require a support agreement,
+please contact:
+
+**Công ty TNHH Devhub Solutions**  
+GitHub: <https://github.com/Devhub-Solutions>
+
+### Third-party components
+
+See [`NOTICE`](NOTICE) for a full list of third-party open-source components and
+their respective licenses.
