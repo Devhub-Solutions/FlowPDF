@@ -25,11 +25,52 @@ export interface RenderOptions {
   imageSizes?: Record<string, { width: number; height: number }>;
 }
 
+/**
+ * Assembles the visible text content from all <w:t> elements in a word XML file.
+ * This is needed to correctly detect placeholders that are split across multiple runs.
+ */
+function assembleTextContent(xml: string): string {
+  return Array.from(xml.matchAll(/<w:t[^>]*>([^<]*)<\/w:t>/g), (m) => m[1]).join('');
+}
+
+/**
+ * Detects whether the template uses double-brace {{field}} or single-brace {field} delimiters.
+ * Returns the appropriate docxtemplater delimiters configuration.
+ */
+function detectTemplateDelimiters(zip: PizZip): { start: string; end: string } {
+  for (const [fileName, file] of Object.entries(zip.files)) {
+    if (
+      !fileName.startsWith('word/') ||
+      !fileName.endsWith('.xml') ||
+      fileName.includes('_rels') ||
+      fileName.includes('media')
+    ) {
+      continue;
+    }
+    const assembled = assembleTextContent(file.asText());
+    if (assembled.includes('{{')) {
+      return { start: '{{', end: '}}' };
+    }
+  }
+  return { start: '{', end: '}' };
+}
+
 export function extractPlaceholders(templateBuffer: Buffer): string[] {
   try {
     const zip = new PizZip(templateBuffer);
-    const normalRegex = /\{([^{}%#/^@*]+)\}/g;
-    const imageRegex = /\{%([^{}]+)\}/g;
+    const delimiters = detectTemplateDelimiters(zip);
+    const isDouble = delimiters.start === '{{';
+
+    // Regex patterns for single-brace {field} syntax (scanned from raw XML)
+    const singleNormalRegex = /\{([^{}%#/^@*]+)\}/g;
+    const singleImageRegex = /\{%([^{}]+)\}/g;
+
+    // Regex patterns for double-brace {{field}} syntax (scanned from assembled text).
+    // Character class [^{}%#/^@*] intentionally excludes docxtemplater special modifiers
+    // (%=image, #=loop, /=close, ^=parent-scope, @=meta, *=raw) plus brace chars.
+    const doubleNormalRegex = /\{\{([^{}%#/^@*]+)\}\}/g;
+    const doubleImageRegex = /\{\{%([^{}]+)\}\}/g;
+
     const placeholders = new Set<string>();
 
     for (const [fileName, file] of Object.entries(zip.files)) {
@@ -37,17 +78,34 @@ export function extractPlaceholders(templateBuffer: Buffer): string[] {
         continue;
       }
 
-      const content = file.asText();
       let match: RegExpExecArray | null;
 
-      normalRegex.lastIndex = 0;
-      imageRegex.lastIndex = 0;
+      if (isDouble) {
+        // For double-brace templates, scan the assembled (cross-run) text
+        const assembled = assembleTextContent(file.asText());
 
-      while ((match = normalRegex.exec(content)) !== null) {
-        placeholders.add(match[1].trim());
-      }
-      while ((match = imageRegex.exec(content)) !== null) {
-        placeholders.add('%' + match[1].trim());
+        doubleNormalRegex.lastIndex = 0;
+        doubleImageRegex.lastIndex = 0;
+
+        while ((match = doubleNormalRegex.exec(assembled)) !== null) {
+          placeholders.add(match[1].trim());
+        }
+        while ((match = doubleImageRegex.exec(assembled)) !== null) {
+          placeholders.add('%' + match[1].trim());
+        }
+      } else {
+        // For single-brace templates, scan the raw XML (handles split-run tags via docxtemplater)
+        const content = file.asText();
+
+        singleNormalRegex.lastIndex = 0;
+        singleImageRegex.lastIndex = 0;
+
+        while ((match = singleNormalRegex.exec(content)) !== null) {
+          placeholders.add(match[1].trim());
+        }
+        while ((match = singleImageRegex.exec(content)) !== null) {
+          placeholders.add('%' + match[1].trim());
+        }
       }
     }
 
@@ -275,7 +333,7 @@ export function renderDocx(options: RenderOptions): Buffer {
   const imageTags = Object.keys(images);
   const zip = new PizZip(templateBuffer);
 
-  // Step 1: replace {%tagName} paragraphs with safe text markers
+  // Step 1: replace {%tagName} / {{%tagName}} paragraphs with safe text markers
   if (imageTags.length > 0) {
     const found = preprocessImageTags(zip, imageTags);
     for (const [tag, wasFound] of Object.entries(found)) {
@@ -287,12 +345,19 @@ export function renderDocx(options: RenderOptions): Buffer {
     }
   }
 
+  // Detect delimiter style ({field} vs {{field}}) before compiling
+  const delimiters = detectTemplateDelimiters(zip);
+
   // Step 2: render text fields with docxtemplater (no image module needed)
-  const doc = new Docxtemplater(zip, {
-    paragraphLoop: true,
-    linebreaks: true,
-  });
+  // NOTE: Docxtemplater can throw TemplateError during construction (template compilation),
+  // so the constructor must be inside the try-catch along with render().
+  let doc: Docxtemplater;
   try {
+    doc = new Docxtemplater(zip, {
+      paragraphLoop: true,
+      linebreaks: true,
+      delimiters,
+    });
     doc.render({ ...data });
   } catch (renderError) {
     const err = renderError as DocxtemplaterError;
