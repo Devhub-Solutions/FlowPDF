@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import sharp from 'sharp';
-import { renderDocx, extractPlaceholders } from '../services/docxService';
+import { renderDocx, extractPlaceholders, TemplateRenderError } from '../services/docxService';
 import { convertDocxToPdf, convertHtmlToPdf, convertUrlToPdf } from '../services/gotenbergService';
 import { sanitizeDocxXml } from '../services/docxSanitize';
 import { logger } from '../utils/logger';
@@ -197,6 +197,10 @@ export async function renderPdf(req: MulterRequest, res: Response): Promise<void
   } catch (error) {
     const err = error as Error;
     logger.error('Render failed', err);
+    if (error instanceof TemplateRenderError) {
+      res.status(400).json({ error: err.message });
+      return;
+    }
     res.status(500).json({ error: err.message || 'Render failed' });
   }
 }
@@ -288,6 +292,10 @@ export async function previewPdf(req: MulterRequest, res: Response): Promise<voi
   } catch (error) {
     const err = error as Error;
     logger.error('Preview failed', err);
+    if (error instanceof TemplateRenderError) {
+      res.status(400).json({ error: err.message });
+      return;
+    }
     res.status(500).json({ error: err.message || 'Preview failed' });
   }
 }
