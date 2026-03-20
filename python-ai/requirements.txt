@@ -4,3 +4,4 @@ python-multipart>=0.0.9
 Pillow>=10.0.0
 ultralytics>=8.2.0
 vietocr>=0.3.6
+playwright>=1.40.0

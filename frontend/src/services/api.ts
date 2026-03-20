@@ -107,3 +107,41 @@ export async function checkHealth(): Promise<{ status: string; gotenberg: string
   const response = await axios.get(`${API_BASE}/health`);
   return response.data;
 }
+
+export interface ViolationLookupResult {
+  found: boolean;
+  data?: Record<string, string>;
+  message?: string;
+}
+
+export interface InspectionLookupResult {
+  found: boolean;
+  data?: Record<string, string>;
+  message?: string;
+}
+
+export async function lookupViolation(
+  plate: string,
+  vehicleType: string,
+  apiKey?: string
+): Promise<ViolationLookupResult> {
+  const response = await axios.post(
+    `${API_BASE}/lookup/violation`,
+    { plate, vehicle_type: vehicleType },
+    { headers: { 'Content-Type': 'application/json', ...buildHeaders(apiKey) } }
+  );
+  return response.data as ViolationLookupResult;
+}
+
+export async function lookupInspection(
+  plate: string,
+  vin: string,
+  apiKey?: string
+): Promise<InspectionLookupResult> {
+  const response = await axios.post(
+    `${API_BASE}/lookup/inspection`,
+    { plate, vin },
+    { headers: { 'Content-Type': 'application/json', ...buildHeaders(apiKey) } }
+  );
+  return response.data as InspectionLookupResult;
+}

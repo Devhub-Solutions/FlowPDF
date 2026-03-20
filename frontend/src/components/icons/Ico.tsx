@@ -93,4 +93,10 @@ export const Ico = {
       <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   ),
+  search: () => (
+    <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+      <circle cx="11" cy="11" r="8" strokeLinecap="round" strokeLinejoin="round"/>
+      <line x1="21" y1="21" x2="16.65" y2="16.65" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  ),
 };

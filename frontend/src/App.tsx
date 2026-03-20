@@ -7,6 +7,7 @@ import BuilderPage from './pages/BuilderPage';
 import MergePage from './pages/MergePage';
 import GuidePage from './pages/GuidePage';
 import ApiDocsPage from './pages/ApiDocsPage';
+import LookupPage from './pages/LookupPage';
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
         <Route path="/render" element={<RenderPage />} />
         <Route path="/builder" element={<BuilderPage />} />
         <Route path="/merge" element={<MergePage />} />
+        <Route path="/lookup" element={<LookupPage />} />
       </Route>
       <Route path="/guide" element={<GuidePage />} />
       <Route path="/api-docs" element={<ApiDocsPage />} />
