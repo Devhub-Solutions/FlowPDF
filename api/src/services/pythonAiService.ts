@@ -73,6 +73,42 @@ export async function forwardDetect(
   }
 }
 
+export async function forwardLookupViolation(
+  plate: string,
+  vehicleType: string
+): Promise<Record<string, unknown>> {
+  try {
+    const response = await axios.post<Record<string, unknown>>(
+      `${PYTHON_AI_URL}/lookup/violation`,
+      { plate, vehicle_type: vehicleType },
+      { headers: { 'Content-Type': 'application/json' }, timeout: 60000 }
+    );
+    return response.data;
+  } catch (error) {
+    const details = getAxiosErrorMessage(error as AxiosError);
+    logger.error(`Python AI violation lookup error: ${details}`);
+    throw new Error(`Violation lookup request failed: ${details}`);
+  }
+}
+
+export async function forwardLookupInspection(
+  plate: string,
+  vin: string
+): Promise<Record<string, unknown>> {
+  try {
+    const response = await axios.post<Record<string, unknown>>(
+      `${PYTHON_AI_URL}/lookup/inspection`,
+      { plate, vin },
+      { headers: { 'Content-Type': 'application/json' }, timeout: 60000 }
+    );
+    return response.data;
+  } catch (error) {
+    const details = getAxiosErrorMessage(error as AxiosError);
+    logger.error(`Python AI inspection lookup error: ${details}`);
+    throw new Error(`Inspection lookup request failed: ${details}`);
+  }
+}
+
 export async function checkPythonAiHealth(): Promise<boolean> {
   try {
     const response = await axios.get(`${PYTHON_AI_URL}/health`, { timeout: 5000 });

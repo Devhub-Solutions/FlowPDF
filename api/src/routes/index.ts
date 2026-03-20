@@ -5,7 +5,7 @@ import { renderPdf, previewPdf, analyzePlaceholders } from '../controllers/rende
 import { combineToPdf } from '../controllers/combineController';
 import { checkGotenbergHealth } from '../services/gotenbergService';
 import { checkPythonAiHealth } from '../services/pythonAiService';
-import { ocrImage, detectObjects } from '../controllers/aiController';
+import { ocrImage, detectObjects, lookupViolation, lookupInspection } from '../controllers/aiController';
 
 const router = Router();
 
@@ -395,5 +395,136 @@ router.post('/ocr', checkApiKey, aiImageUpload, ocrImage);
  *         description: Detection failed
  */
 router.post('/detect', checkApiKey, aiImageUpload, detectObjects);
+
+/**
+ * @openapi
+ * /lookup/violation:
+ *   post:
+ *     summary: Look up traffic fine records (phạt nguội)
+ *     description: |
+ *       Query traffic fine (phạt nguội) records from csgt.vn for a given
+ *       vehicle license plate. Uses a headless browser internally to scrape
+ *       the official CSGT portal and returns structured data.
+ *     tags: [Lookup]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - plate
+ *             properties:
+ *               plate:
+ *                 type: string
+ *                 description: Vehicle license plate number (e.g. 60A64685)
+ *                 example: 60A64685
+ *               vehicle_type:
+ *                 type: string
+ *                 description: "Vehicle type: car, motorbike, or electricbike (default: motorbike)"
+ *                 enum: [car, motorbike, electricbike]
+ *                 default: motorbike
+ *     responses:
+ *       200:
+ *         description: Fine lookup result
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 found:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   description: Structured fine data (keys in English snake_case)
+ *                 message:
+ *                   type: string
+ *                   description: Informational message when no record is found
+ *       400:
+ *         description: Missing or invalid request parameters
+ *       401:
+ *         description: Missing or invalid Authorization header
+ *       403:
+ *         description: Invalid API key
+ *       500:
+ *         description: Lookup failed
+ */
+router.post('/lookup/violation', checkApiKey, lookupViolation);
+
+/**
+ * @openapi
+ * /lookup/inspection:
+ *   post:
+ *     summary: Look up vehicle inspection information (đăng kiểm)
+ *     description: |
+ *       Query vehicle inspection (đăng kiểm) details from csgt.vn for a given
+ *       license plate and chassis (VIN) number. Uses a headless browser to
+ *       scrape the official CSGT portal and returns standardised English keys.
+ *     tags: [Lookup]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - plate
+ *               - vin
+ *             properties:
+ *               plate:
+ *                 type: string
+ *                 description: Vehicle license plate number (e.g. 64H00355)
+ *                 example: 64H00355
+ *               vin:
+ *                 type: string
+ *                 description: Vehicle chassis / VIN number (e.g. RNHA39KHALT028519)
+ *                 example: RNHA39KHALT028519
+ *     responses:
+ *       200:
+ *         description: Inspection lookup result
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 found:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   description: Structured inspection data with English keys
+ *                   properties:
+ *                     license_plate:
+ *                       type: string
+ *                     brand:
+ *                       type: string
+ *                     model_code:
+ *                       type: string
+ *                     vin:
+ *                       type: string
+ *                     engine_number:
+ *                       type: string
+ *                     manufacture_year:
+ *                       type: string
+ *                     seat_count:
+ *                       type: string
+ *                     inspection_certificate_number:
+ *                       type: string
+ *                     inspection_date:
+ *                       type: string
+ *                     inspection_expiry_date:
+ *                       type: string
+ *                 message:
+ *                   type: string
+ *                   description: Informational message when no record is found
+ *       400:
+ *         description: Missing or invalid request parameters
+ *       401:
+ *         description: Missing or invalid Authorization header
+ *       403:
+ *         description: Invalid API key
+ *       500:
+ *         description: Lookup failed
+ */
+router.post('/lookup/inspection', checkApiKey, lookupInspection);
 
 export default router;

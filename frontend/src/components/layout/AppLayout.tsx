@@ -8,6 +8,7 @@ export function AppLayout() {
     { to: '/render',   label: 'Render',           icon: <Ico.zap /> },
     { to: '/merge',    label: 'Merge PDF',         icon: <Ico.merge /> },
     { to: '/builder',  label: 'Template Builder',  icon: <Ico.cursor /> },
+    { to: '/lookup',   label: 'Vehicle Lookup',    icon: <Ico.search /> },
     { to: '/guide',    label: 'Hướng dẫn',         icon: <Ico.book /> },
     { to: '/api-docs', label: 'API Docs',           icon: <Ico.code /> },
   ];

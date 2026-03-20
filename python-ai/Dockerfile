@@ -3,6 +3,7 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # System libraries required by OpenCV / Pillow / LibGL used by ultralytics
+# and system dependencies needed by Playwright Chromium
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1 \
     libglib2.0-0 \
@@ -20,8 +21,11 @@ RUN pip install --no-cache-dir \
     torchvision==0.18.1+cpu \
     --extra-index-url https://download.pytorch.org/whl/cpu
 
-# Install remaining dependencies
+# Install remaining dependencies (including playwright)
 RUN pip install --no-cache-dir -r requirements.txt
+
+# Install Playwright Chromium browser and its OS dependencies
+RUN playwright install chromium --with-deps
 
 COPY main.py .
 
