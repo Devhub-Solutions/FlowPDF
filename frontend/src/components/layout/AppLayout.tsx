@@ -24,7 +24,7 @@ export function AppLayout() {
             <span className="font-bold text-white text-base tracking-tight">FlowPDF</span>
           </Link>
 
-          <span className="sr-only">Scroll horizontally to view all navigation options</span>
+          <span className="sr-only md:hidden">Scroll horizontally to view all navigation options</span>
           <nav
             className="flex items-center gap-1 ml-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0"
             role="navigation"
