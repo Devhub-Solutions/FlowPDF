@@ -81,7 +81,7 @@ export default function MergePage() {
   };
 
   return (
-    <div className="grid grid-cols-[1fr_1fr] gap-5 h-full">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 h-full">
       <div className="flex flex-col gap-4">
         <div className="card">
           <div className="card-header">
@@ -154,7 +154,7 @@ export default function MergePage() {
         {error && <div className="rounded-xl border border-red-500/30 bg-red-500/5 p-3 text-xs text-red-400 font-mono leading-relaxed">⚠ {error}</div>}
       </div>
 
-      <div className="card flex flex-col" style={{ minHeight: '600px' }}>
+      <div className="card flex flex-col min-h-[400px] md:min-h-[520px]">
         <div className="card-header flex-shrink-0">
           <span className="flex items-center gap-1.5 text-zinc-500"><Ico.eye /><span className="card-title">Preview</span></span>
           {status === 'success' && <span className="px-2 py-0.5 rounded-full bg-lime-400/10 text-lime-400 text-xs font-mono ml-2">ready</span>}
