@@ -31,7 +31,7 @@ export function AppLayout() {
                 <Link
                   key={t.to}
                   to={t.to}
-                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-sm transition-all font-medium whitespace-nowrap ${active ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900'}`}
+                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-sm transition-all font-medium whitespace-nowrap focus-visible:outline focus-visible:outline-2 focus-visible:outline-lime-400/60 focus-visible:outline-offset-2 ${active ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900'}`}
                 >
                   {t.icon} {t.label}
                 </Link>

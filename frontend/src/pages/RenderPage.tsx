@@ -367,7 +367,7 @@ export default function RenderPage() {
         )}
       </div>
 
-      <div className="card flex flex-col min-h-[520px]">
+      <div className="card flex flex-col min-h-[400px] md:min-h-[520px]">
         <div className="card-header flex-shrink-0">
           <span className="flex items-center gap-1.5 text-zinc-500"><Ico.eye /><span className="card-title">Preview</span></span>
           {status === 'success' && <span className="px-2 py-0.5 rounded-full bg-lime-400/10 text-lime-400 text-xs font-mono ml-2">ready</span>}
