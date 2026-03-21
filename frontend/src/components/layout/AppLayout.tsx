@@ -24,7 +24,7 @@ export function AppLayout() {
             <span className="font-bold text-white text-base tracking-tight">FlowPDF</span>
           </Link>
 
-          <nav className="flex items-center gap-1 ml-2 md:ml-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
+          <nav className="flex items-center gap-1 ml-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
             {tabs.map((t) => {
               const active = location.pathname === t.to;
               return (
