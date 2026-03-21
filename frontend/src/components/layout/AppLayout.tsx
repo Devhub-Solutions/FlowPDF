@@ -29,6 +29,7 @@ export function AppLayout() {
             role="navigation"
             aria-label="Main navigation"
           >
+            <span className="sr-only">Scroll horizontally to view all navigation options</span>
             {tabs.map((t) => {
               const active = location.pathname === t.to;
               return (
@@ -43,7 +44,6 @@ export function AppLayout() {
             })}
           </nav>
           <span className="md:hidden text-[10px] text-zinc-600 font-mono whitespace-nowrap" aria-hidden="true">scroll →</span>
-          <span className="sr-only">Scroll horizontally to view all navigation options</span>
 
           <div className="ml-auto flex items-center gap-3 w-full md:w-auto justify-end">
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-900 border border-zinc-800">
