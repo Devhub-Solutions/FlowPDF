@@ -24,7 +24,7 @@ export function AppLayout() {
             <span className="font-bold text-white text-base tracking-tight">FlowPDF</span>
           </Link>
 
-          <span className="sr-only">Scroll horizontally to view all navigation options</span>
+          <span className="sr-only md:hidden">Scroll horizontally to view all navigation options</span>
           <nav
             className="flex items-center gap-1 ml-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0"
             role="navigation"
@@ -43,7 +43,7 @@ export function AppLayout() {
               );
             })}
           </nav>
-          <span className="md:hidden text-[10px] text-zinc-600 font-mono whitespace-nowrap">scroll →</span>
+          <span className="md:hidden text-[10px] text-zinc-600 font-mono whitespace-nowrap" aria-hidden="true">scroll →</span>
 
           <div className="ml-auto flex items-center gap-3 w-full md:w-auto justify-end">
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-900 border border-zinc-800">
