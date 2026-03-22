@@ -288,12 +288,26 @@ router.post('/combine', checkApiKey, combineUpload, combineToPdf);
  * @openapi
  * /ocr:
  *   post:
- *     summary: Extract Vietnamese text from an image (VietOCR)
+ *     summary: Extract Vietnamese text from an image (VNCV + VietOCR)
  *     description: |
- *       Upload an image file and receive the extracted text using the VietOCR
- *       deep-learning model. The AI service runs internally; this endpoint acts
- *       as a proxy so callers only need to reach the main FlowPDF API port.
+ *       Upload an image file and receive the extracted text using the VNCV
+ *       pipeline (text-region detection + VietOCR recognition). The AI service
+ *       runs internally; this endpoint acts as a proxy so callers only need to
+ *       reach the main FlowPDF API port.
+ *
+ *       Use the optional `engine` query param to switch engines:
+ *       - `vncv` (default): VNCV detection + VietOCR, stateless (no file writes)
+ *       - `simple`: legacy VietOCR-only recognition
  *     tags: [AI]
+ *     parameters:
+ *       - in: query
+ *         name: engine
+ *         required: false
+ *         schema:
+ *           type: string
+ *           enum: [vncv, simple]
+ *           default: vncv
+ *         description: OCR engine (vncv = detection + VietOCR, simple = VietOCR only)
  *     requestBody:
  *       required: true
  *       content:
@@ -320,6 +334,29 @@ router.post('/combine', checkApiKey, combineUpload, combineToPdf);
  *                   example: "Cộng hòa xã hội chủ nghĩa Việt Nam"
  *                 filename:
  *                   type: string
+ *                 engine:
+ *                   type: string
+ *                   example: vncv
+ *                   description: OCR engine used
+ *                 count:
+ *                   type: integer
+ *                   example: 3
+ *                 lines:
+ *                   type: array
+ *                   description: Detected text lines with bounding boxes (vncv engine)
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       text:
+ *                         type: string
+ *                       bbox:
+ *                         type: array
+ *                         items:
+ *                           type: array
+ *                           items:
+ *                             type: integer
+ *                       orientation:
+ *                         type: string
  *       400:
  *         description: No image file provided
  *       401:

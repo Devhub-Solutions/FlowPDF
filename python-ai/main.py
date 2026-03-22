@@ -1,4 +1,6 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException
+import os
+from pathlib import Path
+from fastapi import FastAPI, File, UploadFile, HTTPException, Query
 from pydantic import BaseModel
 import io
 import re
@@ -24,11 +26,29 @@ def get_ocr_predictor():
         from vietocr.tool.predictor import Predictor
         from vietocr.tool.config import Cfg
 
-        config = Cfg.load_config_from_name("vgg_transformer")
+        config_path = os.getenv("VIETOCR_CONFIG_PATH")
+        if config_path and os.path.isfile(config_path):
+            cfg_file = Path(config_path)
+        else:
+            cfg_file = Path(__file__).with_name("vietocr_vgg_transformer.yml")
+
+        config = Cfg.load_config_from_file(str(cfg_file))
+        weight_override = os.getenv("VIETOCR_WEIGHTS")
+        if weight_override:
+            config["weights"] = weight_override
+            config["pretrain"] = weight_override
         config["device"] = "cpu"
         config["cnn"]["pretrained"] = False
-        _ocr_predictor = Predictor(config)
-        logger.info("VietOCR predictor loaded")
+        try:
+            _ocr_predictor = Predictor(config)
+            logger.info("VietOCR predictor loaded (config=%s)", cfg_file)
+        except Exception as exc:
+            logger.error(
+                "Failed to initialize VietOCR predictor. "
+                "Set VIETOCR_WEIGHTS to a reachable local path or URL. Error: %s",
+                exc,
+            )
+            raise
     return _ocr_predictor
 
 
@@ -277,23 +297,39 @@ def health():
 
 
 @app.post("/ocr")
-async def ocr_image(file: UploadFile = File(...)):
+async def ocr_image(
+    file: UploadFile = File(...),
+    engine: str = Query(
+        "vncv",
+        description="OCR engine to use (vncv: VNCV detection + VietOCR; simple: VietOCR only)",
+    ),
+):
     """
-    Extract Vietnamese text from an uploaded image using VietOCR.
+    Extract Vietnamese text from an uploaded image using VNCV (detection + VietOCR).
 
     - **file**: image file (JPEG, PNG, BMP, TIFF, …)
+    - **engine**: vncv (default) or simple (legacy VietOCR only)
 
-    Returns extracted text string.
+    Returns extracted text string and detected lines without writing any files.
     """
     if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="Uploaded file must be an image")
 
     try:
         contents = await file.read()
-        image = Image.open(io.BytesIO(contents)).convert("RGB")
         predictor = get_ocr_predictor()
-        text = predictor.predict(image)
-        return {"text": text, "filename": file.filename}
+
+        if engine == "simple":
+            image = Image.open(io.BytesIO(contents)).convert("RGB")
+            text = predictor.predict(image)
+            return {"text": text, "filename": file.filename, "engine": "simple"}
+
+        from vncv_ocr import run_vncv_ocr
+
+        loop = asyncio.get_running_loop()
+        result = await loop.run_in_executor(None, run_vncv_ocr, contents, predictor)
+        result["filename"] = file.filename
+        return result
     except HTTPException:
         raise
     except Exception as exc:
