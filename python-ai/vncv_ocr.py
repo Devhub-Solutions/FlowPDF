@@ -2,8 +2,6 @@ import math
 import os
 import urllib.request
 import urllib.parse
-import html
-import re
 from functools import lru_cache
 from typing import List, Tuple
 
@@ -13,6 +11,7 @@ from onnxruntime import InferenceSession
 from PIL import Image
 from pyclipper import ET_CLOSEDPOLYGON, JT_ROUND, PyclipperOffset
 from shapely.geometry import Polygon
+from ocr_utils import normalize_ocr_text
 
 # Remote weight URLs from the open-source VNCV project (Devhub-Solutions/VNCV)
 _DEFAULT_WEIGHTS_BASE = (
@@ -278,19 +277,6 @@ class Classification:
         return images, results
 
 
-def _normalize_ocr_text(text: str) -> str:
-    """Post-process raw OCR output to reduce common noise tokens."""
-    if not text:
-        return ""
-    # Decode any html entities (amp, gt, etc.)
-    cleaned = html.unescape(text)
-    # Replace stray curly braces (often used as space in noisy output)
-    cleaned = cleaned.replace("}", " ")
-    # Collapse repeated whitespace
-    cleaned = re.sub(r"\s+", " ", cleaned)
-    return cleaned.strip()
-
-
 def run_vncv_ocr(image_bytes: bytes, predictor) -> dict:
     """Perform OCR using the stateless VNCV pipeline (no file writes)."""
     array = np.frombuffer(image_bytes, np.uint8)
@@ -313,7 +299,7 @@ def run_vncv_ocr(image_bytes: bytes, predictor) -> dict:
     lines = []
     for idx, (img, box) in enumerate(zip(cropped_images, ordered_boxes)):
         pil_img = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-        text = _normalize_ocr_text(predictor.predict(pil_img))
+        text = normalize_ocr_text(predictor.predict(pil_img))
         orientation = orientations[idx][0] if idx < len(orientations) else ""
         lines.append(
             {
