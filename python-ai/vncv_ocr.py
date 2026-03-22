@@ -64,15 +64,41 @@ def _classification_session() -> InferenceSession:
 
 
 def _sort_polygon(points: List[np.ndarray]) -> List[np.ndarray]:
-    points.sort(key=lambda x: (x[0][1], x[0][0]))
-    for i in range(len(points) - 1):
-        for j in range(i, -1, -1):
-            if abs(points[j + 1][0][1] - points[j][0][1]) < 10 and (
-                points[j + 1][0][0] < points[j][0][0]
-            ):
-                points[j], points[j + 1] = points[j + 1], points[j]
+    """Sort text boxes in natural reading order: top-to-bottom, left-to-right.
+
+    Uses the bounding-box extents of each polygon so the sort key is stable
+    regardless of which corner happens to be stored first in the array.
+    Boxes whose top edges are within ``_ROW_TOLERANCE`` pixels are considered
+    to be on the same line and are then sorted left-to-right by x_min.
+    """
+    _ROW_TOLERANCE = 10  # px — boxes within this vertical distance are co-linear
+
+    def _bbox_key(poly: np.ndarray):
+        pts = poly.reshape(-1, 2)
+        y_min = int(pts[:, 1].min())
+        x_min = int(pts[:, 0].min())
+        return (y_min, x_min)
+
+    points.sort(key=_bbox_key)
+
+    # Secondary pass: group boxes that share the same visual row and sort by x.
+    i = 0
+    while i < len(points):
+        j = i + 1
+        y_i = int(points[i].reshape(-1, 2)[:, 1].min())
+        while j < len(points):
+            y_j = int(points[j].reshape(-1, 2)[:, 1].min())
+            if abs(y_j - y_i) <= _ROW_TOLERANCE:
+                j += 1
             else:
                 break
+        # Sort this row slice by x_min
+        points[i:j] = sorted(
+            points[i:j],
+            key=lambda p: int(p.reshape(-1, 2)[:, 0].min()),
+        )
+        i = j
+
     return points
 
 
@@ -309,5 +335,5 @@ def run_vncv_ocr(image_bytes: bytes, predictor) -> dict:
             }
         )
 
-    combined = "\n".join([ln["text"] for ln in lines]).strip()
-    return {"text": combined, "lines": lines, "engine": "vncv", "count": len(lines)}
+    raw_text = "\n".join([ln["text"] for ln in lines]).strip()
+    return {"raw_text": raw_text, "lines": lines, "engine": "vncv", "count": len(lines)}

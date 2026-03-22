@@ -27,7 +27,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Install Playwright Chromium browser and its OS dependencies
 RUN playwright install chromium --with-deps
 
-COPY main.py vncv_ocr.py vietocr_vgg_transformer.yml .
+COPY main.py vncv_ocr.py ocr_utils.py vietocr_vgg_transformer.yml ./
 
 EXPOSE 8000
 
