@@ -8,6 +8,7 @@ import unicodedata
 import logging
 import asyncio
 from PIL import Image
+from ocr_utils import normalize_ocr_text
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -321,7 +322,7 @@ async def ocr_image(
 
         if engine == "simple":
             image = Image.open(io.BytesIO(contents)).convert("RGB")
-            text = predictor.predict(image)
+            text = normalize_ocr_text(predictor.predict(image))
             return {"text": text, "filename": file.filename, "engine": "simple"}
 
         from vncv_ocr import run_vncv_ocr

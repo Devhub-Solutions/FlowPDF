@@ -11,6 +11,7 @@ from onnxruntime import InferenceSession
 from PIL import Image
 from pyclipper import ET_CLOSEDPOLYGON, JT_ROUND, PyclipperOffset
 from shapely.geometry import Polygon
+from ocr_utils import normalize_ocr_text
 
 # Remote weight URLs from the open-source VNCV project (Devhub-Solutions/VNCV)
 _DEFAULT_WEIGHTS_BASE = (
@@ -298,7 +299,7 @@ def run_vncv_ocr(image_bytes: bytes, predictor) -> dict:
     lines = []
     for idx, (img, box) in enumerate(zip(cropped_images, ordered_boxes)):
         pil_img = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-        text = predictor.predict(pil_img)
+        text = normalize_ocr_text(predictor.predict(pil_img))
         orientation = orientations[idx][0] if idx < len(orientations) else ""
         lines.append(
             {
