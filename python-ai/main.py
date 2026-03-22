@@ -4,6 +4,7 @@ from fastapi import FastAPI, File, UploadFile, HTTPException, Query
 from pydantic import BaseModel
 import io
 import re
+import html
 import unicodedata
 import logging
 import asyncio
@@ -85,6 +86,16 @@ def _strip_accents(text: str) -> str:
 
 def _to_ascii_json(data: dict) -> dict:
     return {_normalize_key(k): v for k, v in data.items()}
+
+
+def _clean_ocr_text(text: str) -> str:
+    """Normalize OCR output to remove common noise tokens."""
+    if not text:
+        return ""
+    cleaned = html.unescape(text)
+    cleaned = cleaned.replace("}", " ")
+    cleaned = re.sub(r"\s+", " ", cleaned)
+    return cleaned.strip()
 
 
 def _extract_table_result(page) -> dict:
@@ -321,7 +332,7 @@ async def ocr_image(
 
         if engine == "simple":
             image = Image.open(io.BytesIO(contents)).convert("RGB")
-            text = predictor.predict(image)
+            text = _clean_ocr_text(predictor.predict(image))
             return {"text": text, "filename": file.filename, "engine": "simple"}
 
         from vncv_ocr import run_vncv_ocr
