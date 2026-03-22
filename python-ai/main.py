@@ -326,7 +326,7 @@ async def ocr_image(
 
         from vncv_ocr import run_vncv_ocr
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         result = await loop.run_in_executor(None, run_vncv_ocr, contents, predictor)
         result["filename"] = file.filename
         return result

@@ -1,6 +1,7 @@
 import math
 import os
 import urllib.request
+import urllib.parse
 from functools import lru_cache
 from typing import List, Tuple
 
@@ -27,7 +28,12 @@ _PROVIDERS = ["CPUExecutionProvider"]
 def _read_bytes(source: str) -> bytes:
     """Read model bytes from a local path or URL without writing to disk."""
     if source.startswith("http://") or source.startswith("https://"):
-        with urllib.request.urlopen(source) as resp:  # nosec: B310
+        parsed = urllib.parse.urlparse(source)
+        if not parsed.scheme or not parsed.netloc:
+            raise RuntimeError(f"Invalid model URL: {source}")
+        if parsed.hostname in {"localhost", "127.0.0.1", "::1"}:
+            raise RuntimeError("Refusing to download model from loopback address")
+        with urllib.request.urlopen(source) as resp:
             if getattr(resp, "status", 200) != 200:
                 raise RuntimeError(f"Unable to download model from {source} (status {resp.status})")
             return resp.read()
@@ -253,7 +259,7 @@ class Classification:
 
     def __call__(self, images: List[np.ndarray]) -> Tuple[List[np.ndarray], List[Tuple[str, float]]]:
         num_images = len(images)
-        results: List[List[str | float]] = [["", 0.0]] * num_images
+        results: List[List[str | float]] = [["", 0.0] for _ in range(num_images)]
         indices = np.argsort(np.array([x.shape[1] / x.shape[0] for x in images]))
         batch_size = 6
         for i in range(0, num_images, batch_size):
