@@ -14,9 +14,7 @@ from shapely.geometry import Polygon
 from ocr_utils import normalize_ocr_text
 
 # Remote weight URLs from the open-source VNCV project (Devhub-Solutions/VNCV)
-_DEFAULT_WEIGHTS_BASE = (
-    "https://raw.githubusercontent.com/Devhub-Solutions/VNCV/refs/heads/main/weights"
-)
+_DEFAULT_WEIGHTS_BASE = "https://raw.githubusercontent.com/Devhub-Solutions/VNCV/main/vncv/weights"
 _DETECTION_SOURCE = os.getenv(
     "VNCV_DETECTION_MODEL", f"{_DEFAULT_WEIGHTS_BASE}/detection.onnx"
 )
