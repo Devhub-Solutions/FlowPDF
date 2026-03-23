@@ -245,6 +245,8 @@ Notes:
 | `PORT` | `8080` | Server port |
 | `FLOWPDF_API_KEY` | *(none)* | Auth key (skip if unset) |
 | `GOTENBERG_URL` | `http://gotenberg:3000` | Internal Docker Gotenberg endpoint |
+| `PYTHON_AI_URL` | `http://localhost:8000` | Internal Python AI service base URL |
+| `PYTHON_AI_TIMEOUT_MS` | `120000` | Timeout (ms) for Python AI requests from the API |
 | `LOG_LEVEL` | `info` | winston log level |
 
 ---
