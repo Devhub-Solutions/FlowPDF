@@ -1,8 +1,25 @@
 import axios, { AxiosError } from 'axios';
+import http from 'http';
+import https from 'https';
 import FormData from 'form-data';
 import { logger } from '../utils/logger';
 
 const PYTHON_AI_URL = process.env.PYTHON_AI_URL || 'http://localhost:8000';
+const PYTHON_AI_TIMEOUT_MS = (() => {
+  const raw = process.env.PYTHON_AI_TIMEOUT_MS;
+  const parsed = raw ? Number(raw) : NaN;
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return 120_000;
+  }
+  return parsed;
+})();
+
+const pythonAiClient = axios.create({
+  baseURL: PYTHON_AI_URL,
+  timeout: PYTHON_AI_TIMEOUT_MS,
+  httpAgent: new http.Agent({ keepAlive: true }),
+  httpsAgent: new https.Agent({ keepAlive: true })
+});
 
 function getAxiosErrorMessage(error: AxiosError): string {
   const status = error.response?.status;
@@ -36,10 +53,10 @@ export async function forwardOcr(
     const form = new FormData();
     form.append('file', fileBuffer, { filename, contentType: mimetype });
 
-    const response = await axios.post<Record<string, unknown>>(
-      `${PYTHON_AI_URL}/ocr`,
+    const response = await pythonAiClient.post<Record<string, unknown>>(
+      '/ocr',
       form,
-      { headers: form.getHeaders(), timeout: 60000 }
+      { headers: form.getHeaders() }
     );
 
     return response.data;
@@ -59,10 +76,10 @@ export async function forwardDetect(
     const form = new FormData();
     form.append('file', fileBuffer, { filename, contentType: mimetype });
 
-    const response = await axios.post<Record<string, unknown>>(
-      `${PYTHON_AI_URL}/detect`,
+    const response = await pythonAiClient.post<Record<string, unknown>>(
+      '/detect',
       form,
-      { headers: form.getHeaders(), timeout: 60000 }
+      { headers: form.getHeaders() }
     );
 
     return response.data;
@@ -78,10 +95,10 @@ export async function forwardLookupViolation(
   vehicleType: string
 ): Promise<Record<string, unknown>> {
   try {
-    const response = await axios.post<Record<string, unknown>>(
-      `${PYTHON_AI_URL}/lookup/violation`,
+    const response = await pythonAiClient.post<Record<string, unknown>>(
+      '/lookup/violation',
       { plate, vehicle_type: vehicleType },
-      { headers: { 'Content-Type': 'application/json' }, timeout: 60000 }
+      { headers: { 'Content-Type': 'application/json' } }
     );
     return response.data;
   } catch (error) {
@@ -96,10 +113,10 @@ export async function forwardLookupInspection(
   vin: string
 ): Promise<Record<string, unknown>> {
   try {
-    const response = await axios.post<Record<string, unknown>>(
-      `${PYTHON_AI_URL}/lookup/inspection`,
+    const response = await pythonAiClient.post<Record<string, unknown>>(
+      '/lookup/inspection',
       { plate, vin },
-      { headers: { 'Content-Type': 'application/json' }, timeout: 60000 }
+      { headers: { 'Content-Type': 'application/json' } }
     );
     return response.data;
   } catch (error) {
@@ -111,7 +128,7 @@ export async function forwardLookupInspection(
 
 export async function checkPythonAiHealth(): Promise<boolean> {
   try {
-    const response = await axios.get(`${PYTHON_AI_URL}/health`, { timeout: 5000 });
+    const response = await pythonAiClient.get('/health', { timeout: 5000 });
     return response.status === 200;
   } catch {
     return false;
